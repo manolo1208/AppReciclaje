@@ -1,6 +1,6 @@
 {
-  "name": "ReciclApp",
-  "short_name": "Reciclaje",
+  "name": "RecilApp",
+  "short_name": "Recilaje",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#ffffff",
