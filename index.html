@@ -4,20 +4,19 @@
   <meta charset="UTF-8" />
   <title>Recicla Bien - EcoApp</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <link rel="manifest" href="./manifest.json"> <!-- Enlace relativo -->
   <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?display=swap&family=Poppins:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700"/>
   <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  
   <!-- Firebase SDKs -->
   <script type="module">
-    // Importaciones necesarias incluyendo updateDoc y autenticación social
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, signInWithPopup, GoogleAuthProvider, FacebookAuthProvider } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
-    import { getFirestore, collection, addDoc, getDocs, query, orderBy, where, updateDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, GoogleAuthProvider, FacebookAuthProvider, signInWithPopup } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+    import { getFirestore, collection, addDoc, getDocs, query, orderBy, where, doc, setDoc, getDoc, updateDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
     import { getStorage, ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js';
-
+    
     const firebaseConfig = {
       apiKey: "AIzaSyCIra7bW5kBj3ynwsAf-H-c97vWgptfnaE",
       authDomain: "appreciclaje-b7b2a.firebaseapp.com",
@@ -26,25 +25,43 @@
       messagingSenderId: "675875410563",
       appId: "1:675875410563:web:33fdc6cd93cbd6950381b6"
     };
-
+    
     const app = initializeApp(firebaseConfig);
     window.auth = getAuth(app);
     window.db = getFirestore(app);
     window.storage = getStorage(app);
-
-    // Definir proveedores de autenticación social
     window.googleProvider = new GoogleAuthProvider();
     window.facebookProvider = new FacebookAuthProvider();
+    
+    // Exportar funciones de Firebase al scope global
+    window.signInWithEmailAndPassword = signInWithEmailAndPassword;
+    window.createUserWithEmailAndPassword = createUserWithEmailAndPassword;
+    window.signOut = signOut;
+    window.signInWithPopup = signInWithPopup;
+    window.collection = collection;
+    window.addDoc = addDoc;
+    window.getDocs = getDocs;
+    window.query = query;
+    window.orderBy = orderBy;
+    window.where = where;
+    window.doc = doc;
+    window.setDoc = setDoc;
+    window.getDoc = getDoc;
+    window.updateDoc = updateDoc;
+    window.ref = ref;
+    window.uploadBytes = uploadBytes;
+    window.getDownloadURL = getDownloadURL;
   </script>
+  
   <style>
-    body {
-      font-family: 'Poppins', 'Inter', sans-serif;
+    body { 
+      font-family: 'Poppins', 'Inter', sans-serif; 
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     }
     .hidden { display: none !important; }
     .nav-btn.active { background: linear-gradient(135deg, #4ade80, #22c55e); color: white; transform: scale(1.05); }
     .eco-gradient { background: linear-gradient(135deg, #22c55e, #16a34a, #15803d); }
-    .glass-effect {
+    .glass-effect { 
       background: rgba(255, 255, 255, 0.1);
       backdrop-filter: blur(10px);
       border: 1px solid rgba(255, 255, 255, 0.2);
@@ -55,12 +72,12 @@
       border: 1px solid rgba(34, 197, 94, 0.2);
       box-shadow: 0 8px 32px rgba(34, 197, 94, 0.1);
     }
-    .btn-primary {
+    .btn-primary { 
       background: linear-gradient(135deg, #22c55e, #16a34a);
       box-shadow: 0 4px 15px rgba(34, 197, 94, 0.3);
       transition: all 0.3s ease;
     }
-    .btn-primary:hover {
+    .btn-primary:hover { 
       transform: translateY(-2px);
       box-shadow: 0 8px 25px rgba(34, 197, 94, 0.4);
     }
@@ -108,6 +125,7 @@
 </head>
 <body class="min-h-screen">
   <div id="app" class="flex flex-col min-h-screen">
+
     <!-- Pantalla principal (landing) -->
     <section id="pantalla-principal" class="min-h-screen flex flex-col justify-between eco-gradient text-white relative overflow-hidden">
       <!-- Elementos decorativos de fondo -->
@@ -116,6 +134,7 @@
         <div class="absolute top-32 right-16 w-12 h-12 bg-white rounded-full animate-float" style="animation-delay: 1s;"></div>
         <div class="absolute bottom-32 left-20 w-16 h-16 bg-white rounded-full animate-float" style="animation-delay: 2s;"></div>
       </div>
+      
       <div class="flex-1 flex flex-col justify-center items-center px-6 relative z-10">
         <div class="text-center mb-8 animate-float">
           <div class="mb-6">
@@ -131,6 +150,7 @@
             Únete a la revolución ambiental. Cada objeto reciclado cuenta para un planeta más sostenible.
           </p>
         </div>
+        
         <div class="w-full max-w-sm space-y-4">
           <button class="w-full py-4 px-6 bg-white text-green-600 rounded-2xl font-semibold text-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105" onclick="showPantalla('registro')">
             🌱 Comenzar Aventura Verde
@@ -140,10 +160,12 @@
           </button>
         </div>
       </div>
+      
       <div class="pb-8 text-center">
         <p class="text-white/60 text-sm">🌍 Por un planeta más limpio</p>
       </div>
     </section>
+
     <!-- Pantalla registro/login -->
     <section id="pantalla-registro" class="hidden min-h-screen eco-gradient flex flex-col justify-center items-center px-6">
       <div class="w-full max-w-sm mx-auto">
@@ -157,12 +179,14 @@
             <h2 class="text-2xl font-bold text-gray-800">EcoAcceso</h2>
             <div class="w-10"></div>
           </div>
+          
           <div class="space-y-4 mb-6">
-            <input id="email-input" type="email" placeholder="📧 Tu email verde"
+            <input id="email-input" type="email" placeholder="📧 Tu email verde" 
                    class="w-full p-4 rounded-2xl bg-gray-50 border-2 border-green-100 focus:border-green-400 focus:outline-none text-gray-700 transition-colors" />
-            <input id="password-input" type="password" placeholder="🔒 Contraseña secreta"
+            <input id="password-input" type="password" placeholder="🔒 Contraseña secreta" 
                    class="w-full p-4 rounded-2xl bg-gray-50 border-2 border-green-100 focus:border-green-400 focus:outline-none text-gray-700 transition-colors" />
           </div>
+          
           <div class="space-y-3 mb-6">
             <button onclick="loginUser()" class="w-full py-4 btn-primary text-white rounded-2xl font-semibold text-lg">
               🌿 Entrar al Ecosistema
@@ -171,15 +195,35 @@
               🌱 Crear Cuenta Verde
             </button>
           </div>
+          
           <p class="text-center text-gray-500 text-sm mb-4">O únete con</p>
           <div class="flex gap-3">
-            <!-- Botones de autenticación social -->
-            <button onclick="loginWithGoogle()" class="flex-1 py-3 bg-blue-50 text-blue-600 rounded-2xl font-medium hover:bg-blue-100 transition-colors">Google</button>
-            <button onclick="loginWithFacebook()" class="flex-1 py-3 bg-indigo-50 text-indigo-600 rounded-2xl font-medium hover:bg-indigo-100 transition-colors">Facebook</button>
+            <button onclick="loginWithGoogle()" class="flex-1 py-3 bg-blue-50 text-blue-600 rounded-2xl font-medium hover:bg-blue-100 transition-colors flex items-center justify-center gap-2">
+              <svg class="w-5 h-5" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+              </svg>
+              Google
+            </button>
+            <button onclick="loginWithFacebook()" class="flex-1 py-3 bg-indigo-50 text-indigo-600 rounded-2xl font-medium hover:bg-indigo-100 transition-colors flex items-center justify-center gap-2">
+              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+              </svg>
+              Facebook
+            </button>
+          </div>
+          
+          <!-- Mensaje de estado de autenticación -->
+          <div id="auth-status" class="hidden mt-4 p-3 rounded-xl text-center">
+            <div class="loading-spinner mx-auto mb-2"></div>
+            <p class="text-sm">Conectando...</p>
           </div>
         </div>
       </div>
     </section>
+
     <!-- Pantalla solicitud -->
     <section id="pantalla-solicitud" class="hidden min-h-screen eco-gradient px-6 py-8">
       <div class="w-full max-w-md mx-auto">
@@ -193,13 +237,14 @@
             <h2 class="text-xl font-bold text-gray-800">♻️ Nueva Solicitud</h2>
             <div class="w-10"></div>
           </div>
+          
           <form id="solicitud-form" class="space-y-4">
-            <input id="nombre-input" type="text" required placeholder="👤 Nombre completo"
+            <input id="nombre-input" type="text" required placeholder="👤 Nombre completo" 
                    class="w-full p-3 rounded-xl bg-gray-50 border-2 border-green-100 focus:border-green-400 focus:outline-none" />
-            <input id="telefono-input" type="tel" required placeholder="📱 Teléfono de contacto"
+            <input id="telefono-input" type="tel" required placeholder="📱 Teléfono de contacto" 
                    class="w-full p-3 rounded-xl bg-gray-50 border-2 border-green-100 focus:border-green-400 focus:outline-none" />
             <div class="relative">
-              <input id="direccion-input" type="text" required placeholder="📍 Dirección de recolección"
+              <input id="direccion-input" type="text" required placeholder="📍 Dirección de recolección" 
                      class="w-full p-3 rounded-xl bg-gray-50 border-2 border-green-100 focus:border-green-400 focus:outline-none pr-12" />
               <button type="button" onclick="verEnMapaDireccion()" class="absolute right-3 top-3 text-green-600 hover:text-green-700">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -209,6 +254,7 @@
               </button>
             </div>
             <div id="direccion-error" class="hidden text-red-500 text-sm"></div>
+            
             <select id="tipo-residuo" required class="w-full p-3 rounded-xl bg-gray-50 border-2 border-green-100 focus:border-green-400 focus:outline-none">
               <option value="">🗂️ Tipo de Residuo</option>
               <option value="plastico">🥤 Plástico</option>
@@ -220,11 +266,13 @@
               <option value="textil">👕 Textiles</option>
               <option value="otro">📦 Otro</option>
             </select>
-            <input id="peso-input" type="text" placeholder="⚖️ Peso aproximado (kg)"
+            
+            <input id="peso-input" type="text" placeholder="⚖️ Peso aproximado (kg)" 
                    class="w-full p-3 rounded-xl bg-gray-50 border-2 border-green-100 focus:border-green-400 focus:outline-none" />
+            
             <div class="relative">
               <input id="imagen-input" type="file" accept="image/*" class="hidden" onchange="mostrarImagenSeleccionada()" />
-              <button type="button" onclick="document.getElementById('imagen-input').click()"
+              <button type="button" onclick="document.getElementById('imagen-input').click()" 
                       class="w-full p-3 rounded-xl bg-gray-50 border-2 border-green-100 hover:border-green-400 transition-colors text-left text-gray-600">
                 📸 Agregar foto (opcional)
               </button>
@@ -232,11 +280,12 @@
                 <span class="text-green-600 text-sm">✅ Imagen seleccionada</span>
               </div>
             </div>
+            
             <div class="flex gap-3 mt-6">
               <button type="submit" class="flex-1 py-3 btn-primary text-white rounded-xl font-semibold">
                 🚀 Enviar Solicitud
               </button>
-              <button type="button" onclick="showPantalla('estadistica')" class="flex-1 py-3 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 transition-colors">
+              <button type="button" onclick="abrirWhatsApp()" class="flex-1 py-3 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 transition-colors">
                 💬 WhatsApp
               </button>
             </div>
@@ -244,6 +293,7 @@
         </div>
       </div>
     </section>
+
     <!-- Pantalla historial/estadísticas -->
     <section id="pantalla-estadistica" class="hidden min-h-screen eco-gradient px-6 py-8">
       <div class="w-full max-w-md mx-auto">
@@ -257,6 +307,7 @@
             <h2 class="text-xl font-bold text-gray-800">📊 Tu Impacto Verde</h2>
             <div class="w-10"></div>
           </div>
+          
           <!-- Estadísticas del usuario -->
           <div class="grid grid-cols-2 gap-4 mb-6">
             <div class="bg-green-50 p-4 rounded-xl text-center">
@@ -268,6 +319,7 @@
               <div class="text-sm text-gray-600">Solicitudes</div>
             </div>
           </div>
+          
           <!-- Progreso ambiental -->
           <div class="mb-6">
             <div class="flex justify-between items-center mb-2">
@@ -279,6 +331,7 @@
             </div>
           </div>
         </div>
+        
         <!-- Historial de solicitudes -->
         <div class="eco-card rounded-3xl p-6 shadow-2xl">
           <h3 class="text-lg font-semibold text-gray-800 mb-4">📋 Historial Reciente</h3>
@@ -292,6 +345,7 @@
             </div>
           </div>
         </div>
+        
         <div class="mt-6 text-center">
           <button onclick="showPantalla('mapa')" class="btn-primary text-white px-8 py-3 rounded-2xl font-semibold">
             🗺️ Ver Mapa de Recolección
@@ -299,6 +353,7 @@
         </div>
       </div>
     </section>
+
     <!-- Pantalla mapa -->
     <section id="pantalla-mapa" class="hidden min-h-screen eco-gradient px-6 py-8">
       <div class="w-full max-w-md mx-auto">
@@ -312,7 +367,9 @@
             <h2 class="text-lg font-bold text-gray-800">🗺️ Mapa Verde</h2>
             <div class="w-10"></div>
           </div>
+          
           <div id="map" class="w-full h-80 rounded-2xl mb-4"></div>
+          
           <div class="text-center">
             <button onclick="showPantalla('recicladores')" class="btn-primary text-white px-6 py-3 rounded-2xl font-semibold">
               👥 Ver Recicladores
@@ -321,6 +378,7 @@
         </div>
       </div>
     </section>
+
     <!-- Pantalla recicladores -->
     <section id="pantalla-recicladores" class="hidden min-h-screen eco-gradient px-6 py-8">
       <div class="w-full max-w-md mx-auto">
@@ -334,6 +392,7 @@
             <h2 class="text-lg font-bold text-gray-800">👥 Eco-Heroes</h2>
             <div class="w-10"></div>
           </div>
+          
           <div class="mb-6">
             <label class="block text-sm font-medium text-gray-700 mb-2">🎯 Seleccionar Reciclador</label>
             <select id="assignedRecycler" class="w-full p-3 rounded-xl bg-gray-50 border-2 border-green-100 focus:border-green-400 focus:outline-none">
@@ -343,35 +402,9 @@
               <option value="3">🌟 Adriano Castro Vega</option>
               <option value="4">🌟 Noralba Arias Rivera</option>
               <option value="5">🌟 Leonor De Jesús Orozco</option>
-              <option value="6">Wilson José Ravelo Díaz</option>
-             <option value="7">Talía Gomez Fuentes</option>
-             <option value="8">José Manuel Díaz Agudelo</option>
-             <option value="9">Abel Antonio Muñoz Macías</option>
-            <option value="10">Atilano Meneses Polo</option>
-            <option value="11">Teresa De Jesus Isaza</option>
-           <option value="12">Guillermo Quintero Cortes</option>
-            <option value="13">Buenaventura Quintero Cortes</option>
-            <option value="14">Jorge Iván Londoño Gómez</option>
-           <option value="15">Omar Antonio Mejía Franco</option>
-           <option value="16">Teresa del Carmen Díaz Meza</option>
-           <option value="17">Bernardino Morales Flores</option>
-           <option value="18">Sanín Enrique Díaz Meza</option>
-           <option value="19">Dagoberto Díaz Meza</option>
-           <option value="20">Luz Dary Agudelo Rodriguez</option>
-           <option value="21">Manuel Antonio Rodriguez Guardia</option>
-           <option value="22">Maria Edith Echeverri Villa</option>
-           <option value="23">Luz Herminia Aguilera Vargas</option>
-           <option value="24">Campo Elias Rueda Niño</option>
-           <option value="25">Laniker De Jesús Diaz Agudelo</option>
-           <option value="26">Rodolfo Rico Barroso</option>
-           <option value="27">Henry Diaz</option>
-           <option value="28">Karina Alexandra Meneses Garcia</option>
-           <option value="29">Madeleine Diaz Barraza</option>
-          <option value="30">Maria Camila Soto Moreno</option>
-           <option value="31">Alvaro Barragan</option>
-           <option value="32">Mario Rafael Guerra</option>
             </select>
           </div>
+          
           <!-- Top recicladores -->
           <div class="mb-6">
             <h3 class="text-lg font-semibold text-gray-800 mb-4">🏆 Top Eco-Warriors</h3>
@@ -384,6 +417,7 @@
                 </div>
                 <div class="text-yellow-600 font-bold">⭐ 4.9</div>
               </div>
+              
               <div class="flex items-center p-3 bg-gray-50 rounded-xl">
                 <div class="text-2xl mr-3">🥈</div>
                 <div class="flex-1">
@@ -392,6 +426,7 @@
                 </div>
                 <div class="text-gray-600 font-bold">⭐ 4.8</div>
               </div>
+              
               <div class="flex items-center p-3 bg-orange-50 rounded-xl">
                 <div class="text-2xl mr-3">🥉</div>
                 <div class="flex-1">
@@ -402,6 +437,7 @@
               </div>
             </div>
           </div>
+          
           <div class="text-center">
             <button onclick="showPantalla('principal')" class="btn-primary text-white px-8 py-3 rounded-2xl font-semibold">
               🏠 Volver al Inicio
@@ -410,6 +446,7 @@
         </div>
       </div>
     </section>
+
     <!-- Navegación flotante -->
     <nav class="floating-nav hidden" id="floating-nav">
       <div class="flex space-x-2">
@@ -436,6 +473,7 @@
       </div>
     </nav>
   </div>
+
   <script>
     // Variables globales
     let currentUser = null;
@@ -447,79 +485,196 @@
     async function loginUser() {
       const email = document.getElementById('email-input').value;
       const password = document.getElementById('password-input').value;
+      
       if (!email || !password) {
         showNotification('Por favor completa todos los campos', 'error');
         return;
       }
+
+      showAuthStatus(true, 'Iniciando sesión...');
+
       try {
-        const userCredential = await signInWithEmailAndPassword(window.auth, email, password);
+        const userCredential = await window.signInWithEmailAndPassword(window.auth, email, password);
         currentUser = userCredential.user;
         showNotification('¡Bienvenido de vuelta, Eco-Warrior! 🌱', 'success');
         showPantalla('solicitud');
-        cargarDatosUsuario();
+        await cargarDatosUsuario();
       } catch (error) {
-        showNotification('Error al iniciar sesión: ' + error.message, 'error');
+        console.error('Error de login:', error);
+        const errorMessage = getFirebaseErrorMessage(error.code);
+        showNotification(errorMessage, 'error');
+      } finally {
+        showAuthStatus(false);
       }
     }
 
     async function registerUser() {
       const email = document.getElementById('email-input').value;
       const password = document.getElementById('password-input').value;
+      
       if (!email || !password) {
         showNotification('Por favor completa todos los campos', 'error');
         return;
       }
+
       if (password.length < 6) {
         showNotification('La contraseña debe tener al menos 6 caracteres', 'error');
         return;
       }
+
+      showAuthStatus(true, 'Creando cuenta...');
+
       try {
-        const userCredential = await createUserWithEmailAndPassword(window.auth, email, password);
+        const userCredential = await window.createUserWithEmailAndPassword(window.auth, email, password);
         currentUser = userCredential.user;
+        
         // Crear perfil inicial del usuario
-        await addDoc(collection(window.db, 'usuarios'), {
-          uid: currentUser.uid,
-          email: currentUser.email,
-          fechaRegistro: new Date(),
-          totalReciclado: 0,
-          totalSolicitudes: 0,
-          nivel: 1
-        });
+        await createUserProfile(currentUser);
+        
         showNotification('¡Cuenta creada! Bienvenido a la comunidad verde 🌿', 'success');
         showPantalla('solicitud');
       } catch (error) {
-        showNotification('Error al crear cuenta: ' + error.message, 'error');
+        console.error('Error de registro:', error);
+        const errorMessage = getFirebaseErrorMessage(error.code);
+        showNotification(errorMessage, 'error');
+      } finally {
+        showAuthStatus(false);
       }
     }
 
-    // Funciones de autenticación social
+    // Autenticación con Google
     async function loginWithGoogle() {
+      showAuthStatus(true, 'Conectando con Google...');
+      
       try {
-        const result = await signInWithPopup(window.auth, window.googleProvider);
+        const result = await window.signInWithPopup(window.auth, window.googleProvider);
         currentUser = result.user;
-        showNotification('¡Bienvenido con Google! 🌱', 'success');
+        
+        // Verificar si es un usuario nuevo
+        const isNewUser = result._tokenResponse?.isNewUser || false;
+        if (isNewUser) {
+          await createUserProfile(currentUser);
+          showNotification('¡Cuenta creada con Google! Bienvenido 🌿', 'success');
+        } else {
+          showNotification('¡Bienvenido de vuelta! 🤗', 'success');
+        }
+        
         showPantalla('solicitud');
-        cargarDatosUsuario(); // Cargar datos si es necesario
+        await cargarDatosUsuario();
       } catch (error) {
-        showNotification('Error al iniciar sesión con Google: ' + error.message, 'error');
+        console.error('Error de autenticación con Google:', error);
+        handleSocialAuthError(error);
+      } finally {
+        showAuthStatus(false);
       }
     }
 
+    // Autenticación con Facebook
     async function loginWithFacebook() {
+      showAuthStatus(true, 'Conectando con Facebook...');
+      
       try {
-        const result = await signInWithPopup(window.auth, window.facebookProvider);
+        const result = await window.signInWithPopup(window.auth, window.facebookProvider);
         currentUser = result.user;
-        showNotification('¡Bienvenido con Facebook! 🌱', 'success');
+        
+        // Verificar si es un usuario nuevo
+        const isNewUser = result._tokenResponse?.isNewUser || false;
+        if (isNewUser) {
+          await createUserProfile(currentUser);
+          showNotification('¡Cuenta creada con Facebook! Bienvenido 🌿', 'success');
+        } else {
+          showNotification('¡Bienvenido de vuelta! 🤗', 'success');
+        }
+        
         showPantalla('solicitud');
-        cargarDatosUsuario(); // Cargar datos si es necesario
+        await cargarDatosUsuario();
       } catch (error) {
-        showNotification('Error al iniciar sesión con Facebook: ' + error.message, 'error');
+        console.error('Error de autenticación con Facebook:', error);
+        handleSocialAuthError(error);
+      } finally {
+        showAuthStatus(false);
+      }
+    }
+
+    // Crear perfil de usuario
+    async function createUserProfile(user) {
+      try {
+        await window.setDoc(window.doc(window.db, 'usuarios', user.uid), {
+          uid: user.uid,
+          email: user.email,
+          displayName: user.displayName || 'Usuario Eco',
+          photoURL: user.photoURL || null,
+          fechaRegistro: new Date(),
+          totalReciclado: 0,
+          totalSolicitudes: 0,
+          nivel: 1,
+          provider: user.providerData[0]?.providerId || 'email'
+        });
+      } catch (error) {
+        console.error('Error creando perfil:', error);
+      }
+    }
+
+    // Manejar errores de autenticación social
+    function handleSocialAuthError(error) {
+      console.error('Error de autenticación social:', error);
+      
+      switch (error.code) {
+        case 'auth/popup-closed-by-user':
+          showNotification('Proceso de autenticación cancelado', 'warning');
+          break;
+        case 'auth/popup-blocked':
+          showNotification('Popup bloqueado. Permite popups e intenta de nuevo', 'error');
+          break;
+        case 'auth/account-exists-with-different-credential':
+          showNotification('Ya existe una cuenta con este email usando otro método', 'error');
+          break;
+        case 'auth/cancelled-popup-request':
+          // No mostrar mensaje, es normal si el usuario cancela
+          break;
+        case 'auth/configuration-not-found':
+        case 'auth/invalid-api-key':
+          showNotification('Servicio no disponible temporalmente. Usa email y contraseña', 'warning');
+          break;
+        default:
+          showNotification('Servicio no disponible. Intenta con email y contraseña', 'warning');
+      }
+    }
+
+    // Obtener mensajes de error más amigables
+    function getFirebaseErrorMessage(errorCode) {
+      const errorMessages = {
+        'auth/user-not-found': 'Usuario no encontrado. ¿Has creado una cuenta?',
+        'auth/wrong-password': 'Contraseña incorrecta',
+        'auth/email-already-in-use': 'Este email ya está registrado',
+        'auth/weak-password': 'La contraseña es muy débil',
+        'auth/invalid-email': 'Email inválido',
+        'auth/user-disabled': 'Esta cuenta ha sido deshabilitada',
+        'auth/too-many-requests': 'Demasiados intentos. Espera un momento',
+        'auth/network-request-failed': 'Error de conexión. Verifica tu internet',
+        'auth/invalid-credential': 'Credenciales inválidas',
+        'auth/missing-password': 'Por favor ingresa una contraseña'
+      };
+      
+      return errorMessages[errorCode] || 'Error de autenticación. Intenta de nuevo';
+    }
+
+    // Mostrar/ocultar estado de autenticación
+    function showAuthStatus(show, message = '') {
+      const authStatus = document.getElementById('auth-status');
+      if (authStatus) {
+        if (show) {
+          authStatus.querySelector('p').textContent = message;
+          authStatus.classList.remove('hidden');
+        } else {
+          authStatus.classList.add('hidden');
+        }
       }
     }
 
     async function logoutUser() {
       try {
-        await signOut(window.auth);
+        await window.signOut(window.auth);
         currentUser = null;
         showNotification('Sesión cerrada. ¡Gracias por cuidar el planeta! 🌍', 'success');
         showPantalla('principal');
@@ -531,24 +686,29 @@
     // Función para enviar solicitud
     async function enviarSolicitud(event) {
       event.preventDefault();
+      
       const nombre = document.getElementById('nombre-input').value;
       const telefono = document.getElementById('telefono-input').value;
       const direccion = document.getElementById('direccion-input').value;
       const tipoResiduo = document.getElementById('tipo-residuo').value;
       const peso = document.getElementById('peso-input').value;
       const imagenFile = document.getElementById('imagen-input').files[0];
+      
       if (!nombre || !telefono || !direccion || !tipoResiduo) {
         showNotification('Por favor completa los campos obligatorios', 'error');
         return;
       }
+
       try {
         showNotification('Enviando solicitud...', 'info');
+        
         let imagenUrl = null;
         if (imagenFile) {
-          const imagenRef = ref(window.storage, `solicitudes/${Date.now()}_${imagenFile.name}`);
-          const snapshot = await uploadBytes(imagenRef, imagenFile);
-          imagenUrl = await getDownloadURL(snapshot.ref);
+          const imagenRef = window.ref(window.storage, `solicitudes/${Date.now()}_${imagenFile.name}`);
+          const snapshot = await window.uploadBytes(imagenRef, imagenFile);
+          imagenUrl = await window.getDownloadURL(snapshot.ref);
         }
+
         const solicitud = {
           nombre,
           telefono,
@@ -561,14 +721,18 @@
           estado: 'pendiente',
           userId: currentUser?.uid || 'anonimo'
         };
-        await addDoc(collection(window.db, 'solicitudes'), solicitud);
+
+        await window.addDoc(window.collection(window.db, 'solicitudes'), solicitud);
+        
         showNotification('¡Solicitud enviada exitosamente! 🎉', 'success');
         document.getElementById('solicitud-form').reset();
         document.getElementById('imagen-preview').classList.add('hidden');
+        
         // Actualizar estadísticas del usuario si está logueado
         if (currentUser) {
           await actualizarEstadisticasUsuario(peso);
         }
+        
         showPantalla('estadistica');
       } catch (error) {
         showNotification('Error al enviar solicitud: ' + error.message, 'error');
@@ -578,49 +742,61 @@
     // Función para cargar datos del usuario
     async function cargarDatosUsuario() {
       if (!currentUser) return;
+      
       try {
-        const q = query(
-          collection(window.db, 'usuarios'),
-          where('uid', '==', currentUser.uid)
-        );
-        const querySnapshot = await getDocs(q);
-        if (!querySnapshot.empty) {
-          const userData = querySnapshot.docs[0].data();
+        const userDoc = await window.getDoc(window.doc(window.db, 'usuarios', currentUser.uid));
+        
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
           document.getElementById('total-reciclado').textContent = userData.totalReciclado || 0;
           document.getElementById('total-solicitudes').textContent = userData.totalSolicitudes || 0;
+          
+          // Actualizar barra de progreso
+          actualizarBarraProgreso(userData.totalReciclado || 0);
+        } else {
+          // Si no existe el documento, crearlo
+          await createUserProfile(currentUser);
         }
+        
         await cargarHistorialSolicitudes();
       } catch (error) {
         console.error('Error cargando datos del usuario:', error);
+        showNotification('Error cargando datos del usuario', 'error');
       }
     }
 
     // Función para cargar historial de solicitudes
     async function cargarHistorialSolicitudes() {
       if (!currentUser) return;
+      
       try {
-        const q = query(
-          collection(window.db, 'solicitudes'),
-          where('userId', '==', currentUser.uid),
-          orderBy('fecha', 'desc')
+        const q = window.query(
+          window.collection(window.db, 'solicitudes'),
+          window.where('userId', '==', currentUser.uid),
+          window.orderBy('fecha', 'desc')
         );
-        const querySnapshot = await getDocs(q);
+        const querySnapshot = await window.getDocs(q);
+        
         const historialList = document.getElementById('historial-list');
         historialList.innerHTML = '';
+        
         querySnapshot.forEach((doc) => {
           const solicitud = doc.data();
           const fecha = solicitud.fecha.toDate();
           const fechaFormateada = fecha.toLocaleDateString('es-ES');
+          
           const estadoColor = {
             'pendiente': 'bg-yellow-100 text-yellow-600',
             'en_proceso': 'bg-blue-100 text-blue-600',
             'completado': 'bg-green-100 text-green-600'
           };
+          
           const estadoTexto = {
             'pendiente': 'Pendiente',
             'en_proceso': 'En Proceso',
             'completado': 'Completado'
           };
+          
           historialList.innerHTML += `
             <div class="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
               <div>
@@ -633,6 +809,7 @@
             </div>
           `;
         });
+        
         if (querySnapshot.empty) {
           historialList.innerHTML = `
             <div class="text-center py-8 text-gray-500">
@@ -650,18 +827,17 @@
     // Función para actualizar estadísticas del usuario
     async function actualizarEstadisticasUsuario(pesoNuevo) {
       if (!currentUser) return;
+      
       try {
-        const q = query(
-          collection(window.db, 'usuarios'),
-          where('uid', '==', currentUser.uid)
-        );
-        const querySnapshot = await getDocs(q);
-        if (!querySnapshot.empty) {
-          const docRef = querySnapshot.docs[0].ref;
-          const userData = querySnapshot.docs[0].data();
+        const userRef = window.doc(window.db, 'usuarios', currentUser.uid);
+        const userDoc = await window.getDoc(userRef);
+        
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
           const nuevoPeso = (userData.totalReciclado || 0) + (parseFloat(pesoNuevo) || 0);
           const nuevasSolicitudes = (userData.totalSolicitudes || 0) + 1;
-          await updateDoc(docRef, {
+          
+          await window.updateDoc(userRef, {
             totalReciclado: nuevoPeso,
             totalSolicitudes: nuevasSolicitudes
           });
@@ -675,9 +851,11 @@
     function inicializarMapa() {
       if (!mapaLeaflet) {
         mapaLeaflet = L.map('map').setView([ubicacionReciclaje.lat, ubicacionReciclaje.lng], 13);
+        
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
           attribution: '© OpenStreetMap contributors'
         }).addTo(mapaLeaflet);
+        
         marcadorActual = L.marker([ubicacionReciclaje.lat, ubicacionReciclaje.lng])
           .addTo(mapaLeaflet)
           .bindPopup(ubicacionReciclaje.label)
@@ -689,7 +867,9 @@
       if (!mapaLeaflet) {
         inicializarMapa();
       }
+      
       mapaLeaflet.setView([lat, lng], 15);
+      
       if (marcadorActual) {
         marcadorActual.setLatLng([lat, lng]).setPopupContent(label).openPopup();
       } else {
@@ -702,6 +882,7 @@
       try {
         const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(direccion + ', Bogotá, Colombia')}`);
         const data = await response.json();
+        
         if (data.length > 0) {
           return {
             lat: parseFloat(data[0].lat),
@@ -718,18 +899,22 @@
     function verEnMapaDireccion() {
       const direccion = document.getElementById('direccion-input').value;
       const errorMsg = document.getElementById('direccion-error');
+      
       if (!direccion) {
         errorMsg.textContent = "Ingresa una dirección primero.";
         errorMsg.classList.remove("hidden");
         return;
       }
+
       errorMsg.classList.add("hidden");
       showNotification('Buscando dirección...', 'info');
+      
       geocodificarDireccion(direccion)
         .then(coords => {
           ubicacionReciclaje.lat = coords.lat;
           ubicacionReciclaje.lng = coords.lng;
           ubicacionReciclaje.label = direccion;
+          
           showNotification('¡Dirección encontrada! 📍', 'success');
           showPantalla('mapa');
         })
@@ -744,6 +929,7 @@
     function mostrarImagenSeleccionada() {
       const input = document.getElementById('imagen-input');
       const preview = document.getElementById('imagen-preview');
+      
       if (input.files && input.files[0]) {
         preview.classList.remove('hidden');
       } else {
@@ -758,20 +944,25 @@
       if (existingNotification) {
         existingNotification.remove();
       }
+      
       const colors = {
         success: 'bg-green-500',
         error: 'bg-red-500',
         info: 'bg-blue-500',
         warning: 'bg-yellow-500'
       };
+      
       const notification = document.createElement('div');
       notification.className = `notification fixed top-4 right-4 ${colors[type]} text-white px-6 py-3 rounded-2xl shadow-lg z-50 transform translate-x-full transition-transform duration-300`;
       notification.textContent = message;
+      
       document.body.appendChild(notification);
+      
       // Mostrar notificación
       setTimeout(() => {
         notification.classList.remove('translate-x-full');
       }, 100);
+      
       // Ocultar después de 3 segundos
       setTimeout(() => {
         notification.classList.add('translate-x-full');
@@ -783,24 +974,29 @@
     function showPantalla(nombre) {
       const pantallas = ['principal', 'registro', 'solicitud', 'estadistica', 'mapa', 'recicladores'];
       const floatingNav = document.getElementById('floating-nav');
+      
       // Ocultar todas las pantallas
       pantallas.forEach(p => {
         const el = document.getElementById('pantalla-' + p);
         if (el) el.classList.add('hidden');
       });
+      
       // Mostrar la pantalla seleccionada
       const mostrar = document.getElementById('pantalla-' + nombre);
       if (mostrar) mostrar.classList.remove('hidden');
+      
       // Mostrar/ocultar navegación flotante
       if (nombre === 'principal' || nombre === 'registro') {
         floatingNav.classList.add('hidden');
       } else {
         floatingNav.classList.remove('hidden');
       }
+      
       // Actualizar botones activos de navegación
       document.querySelectorAll('.nav-btn').forEach(btn => {
         btn.classList.remove('active');
       });
+      
       // Acciones específicas por pantalla
       switch (nombre) {
         case 'mapa':
@@ -817,41 +1013,22 @@
       }
     }
 
-    // Inicialización al cargar la página
-    document.addEventListener('DOMContentLoaded', function() {
-      showPantalla('principal');
-      // Configurar formulario de solicitud
-      document.getElementById('solicitud-form').addEventListener('submit', enviarSolicitud);
-      // Monitorear estado de autenticación
-      window.auth.onAuthStateChanged((user) => {
-        currentUser = user;
-        if (user) {
-          console.log('Usuario logueado:', user.email);
-          // Opcional: cargar datos del usuario automáticamente al iniciar sesión
-          // cargarDatosUsuario();
-        }
-      });
-      // Configurar eventos especiales
-      document.addEventListener('click', function(e) {
-        if (e.target.matches('[data-whatsapp]')) {
-          const mensaje = encodeURIComponent('¡Hola! Me interesa el servicio de reciclaje de EcoRecicla 🌱');
-          window.open(`https://wa.me/573001234567?text=${mensaje}`, '_blank');
-        }
-      });
-    });
-
-    // Función para WhatsApp (desde el botón en solicitud)
+    // Función para WhatsApp
     function abrirWhatsApp() {
       const nombre = document.getElementById('nombre-input').value || 'Usuario';
       const tipoResiduo = document.getElementById('tipo-residuo').value || 'materiales reciclables';
       const direccion = document.getElementById('direccion-input').value || 'ubicación a confirmar';
+      
       const mensaje = `¡Hola! Soy ${nombre} y quiero solicitar recolección de ${tipoResiduo} en ${direccion}. 🌱♻️`;
       const whatsappUrl = `https://wa.me/573001234567?text=${encodeURIComponent(mensaje)}`;
+      
       window.open(whatsappUrl, '_blank');
     }
 
     // Funciones adicionales para interactividad
     function animateValue(element, start, end, duration) {
+      if (!element) return;
+      
       const startTimestamp = performance.now();
       const step = (timestamp) => {
         const progress = Math.min((timestamp - startTimestamp) / duration, 1);
@@ -868,13 +1045,17 @@
     function cargarEstadisticasAnimadas() {
       const totalReciclado = document.getElementById('total-reciclado');
       const totalSolicitudes = document.getElementById('total-solicitudes');
+      
       // Simular datos (en una app real vendrían de Firebase)
       const datos = {
         reciclado: Math.floor(Math.random() * 100) + 20,
         solicitudes: Math.floor(Math.random() * 20) + 5
       };
-      animateValue(totalReciclado, 0, datos.reciclado, 1500);
-      animateValue(totalSolicitudes, 0, datos.solicitudes, 1500);
+      
+      if (totalReciclado && totalSolicitudes) {
+        animateValue(totalReciclado, 0, datos.reciclado, 1500);
+        animateValue(totalSolicitudes, 0, datos.solicitudes, 1500);
+      }
     }
 
     // Implementación del sistema de niveles
@@ -889,24 +1070,43 @@
     function actualizarBarraProgreso(totalReciclado) {
       const nivel = calcularNivel(totalReciclado);
       const progreso = ((totalReciclado % 25) / 25) * 100;
+      
       const barraProgreso = document.querySelector('.progress-bar');
       if (barraProgreso) {
         barraProgreso.style.width = progreso + '%';
       }
     }
 
-    // Registrar Service Worker al final del script
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js') // Enlace relativo
-          .then((registration) => {
-            console.log('Service Worker registrado con éxito:', registration);
-          })
-          .catch((registrationError) => {
-            console.log('Error al registrar el Service Worker:', registrationError);
-          });
-      });
-    }
+    // Inicialización al cargar la página
+    document.addEventListener('DOMContentLoaded', function() {
+      showPantalla('principal');
+      
+      // Configurar formulario de solicitud
+      const solicitudForm = document.getElementById('solicitud-form');
+      if (solicitudForm) {
+        solicitudForm.addEventListener('submit', enviarSolicitud);
+      }
+      
+      // Monitorear estado de autenticación
+      if (window.auth) {
+        window.auth.onAuthStateChanged((user) => {
+          currentUser = user;
+          if (user) {
+            console.log('Usuario logueado:', user.email);
+          }
+        });
+      }
+    });
+
+    // Hacer funciones globales para que puedan ser llamadas desde HTML
+    window.loginUser = loginUser;
+    window.registerUser = registerUser;
+    window.loginWithGoogle = loginWithGoogle;
+    window.loginWithFacebook = loginWithFacebook;
+    window.logoutUser = logoutUser;
+    window.showPantalla = showPantalla;
+    window.verEnMapaDireccion = verEnMapaDireccion;
+    window.mostrarImagenSeleccionada = mostrarImagenSeleccionada;
+    window.abrirWhatsApp = abrirWhatsApp;
   </script>
 </body>
-</html>
