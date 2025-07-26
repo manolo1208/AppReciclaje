@@ -88,31 +88,32 @@
     </style>
 </head>
 <body>
-    <!-- Pantalla principal -->
-    <section id="pantalla-principal" class="hidden min-h-screen eco-gradient flex flex-col justify-center items-center px-6">
-        <div class="w-full max-w-sm mx-auto text-center">
-            <div class="eco-card rounded-3xl p-8 shadow-2xl mb-8">
-                <div class="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <span class="text-4xl">♻️</span>
-                </div>
-                <h1 class="text-3xl font-bold text-gray-800 mb-4">AppReciclaje</h1>
-                <p class="text-gray-600 mb-8">Transforma tu impacto ambiental en recompensas. ¡Únete a la revolución verde!</p>
-
-                <div class="space-y-4">
-                    <button onclick="showPantalla('registro')" class="w-full btn-primary text-white px-6 py-4 rounded-2xl font-semibold">
-                        🌱 Comenzar Ahora
-                    </button>
-                    <button onclick="showPantalla('registro')" class="w-full bg-white text-green-600 px-6 py-4 rounded-2xl font-semibold border-2 border-green-200 hover:bg-green-50 transition-colors">
-                        👤 Ya tengo cuenta
-                    </button>
-                </div>
+<!-- Pantalla principal -->
+<section id="pantalla-principal" class="hidden min-h-screen eco-gradient flex flex-col justify-center items-center px-6">
+    <div class="w-full max-w-sm mx-auto text-center">
+        <div class="eco-card rounded-3xl p-8 shadow-2xl mb-8">
+            <div class="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <span class="text-4xl">♻️</span>
             </div>
+            <h1 class="text-3xl font-bold text-gray-800 mb-4">AppReciclaje</h1>
+            <p class="text-gray-600 mb-8">Transforma tu impacto ambiental en recompensas. ¡Únete a la revolución verde!</p>
 
-            <p class="text-white text-sm opacity-80">
-                Juntos por un planeta más limpio 🌍
-            </p>
+            <div class="space-y-4">
+                <!-- Este botón debe mostrar la pantalla de registro -->
+                <button onclick="showPantalla('registro')" class="w-full btn-primary text-white px-6 py-4 rounded-2xl font-semibold">
+                    🌱 Crear Cuenta Verde
+                </button>
+                <button onclick="showPantalla('registro')" class="w-full bg-white text-green-600 px-6 py-4 rounded-2xl font-semibold border-2 border-green-200 hover:bg-green-50 transition-colors">
+                    👤 Ya tengo cuenta
+                </button>
+            </div>
         </div>
-    </section>
+
+        <p class="text-white text-sm opacity-80">
+            Juntos por un planeta más limpio 🌍
+        </p>
+    </div>
+</section>
 
     <!-- Pantalla registro/login -->
     <section id="pantalla-registro" class="hidden min-h-screen eco-gradient flex flex-col justify-center items-center px-6">
