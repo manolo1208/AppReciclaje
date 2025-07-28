@@ -171,25 +171,25 @@
     </section>
 
     <!-- Pantalla mapa -->
-<section id="pantalla-mapa" class="hidden min-h-screen eco-gradient px-6 py-8">
-    <div class="w-full max-w-md mx-auto">
-        <div class="eco-card rounded-3xl p-6 shadow-2xl">
-            <div class="flex items-center justify-between mb-6">
-                <button onclick="showPantalla('principal')" class="p-2 rounded-full bg-green-100 text-green-600">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
-                </button>
-                <h2 class="text-xl font-bold text-gray-800">📍 Mapa de Recolección</h2>
-                <div class="w-10"></div>
-            </div>
-            <div id="map" style="height: 400px; border-radius: 1rem;" class="mb-4"></div>
-            <div class="bg-green-50 p-4 rounded-xl">
-                <h3 class="font-semibold text-green-800 mb-2">📍 Punto de Recolección</h3>
-                <p class="text-green-700 text-sm">Calle 123 # 45-67, Bogotá</p>
-                <p class="text-green-600 text-xs mt-1">Abierto: Lunes a Viernes 8am-5pm</p>
+    <section id="pantalla-mapa" class="hidden min-h-screen eco-gradient px-6 py-8">
+        <div class="w-full max-w-md mx-auto">
+            <div class="eco-card rounded-3xl p-6 shadow-2xl">
+                <div class="flex items-center justify-between mb-6">
+                    <button onclick="showPantalla('principal')" class="p-2 rounded-full bg-green-100 text-green-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                    </button>
+                    <h2 class="text-xl font-bold text-gray-800">📍 Mapa de Recolección</h2>
+                    <div class="w-10"></div>
+                </div>
+                <div id="map" style="height: 400px; border-radius: 1rem;" class="mb-4"></div>
+                <div class="bg-green-50 p-4 rounded-xl">
+                    <h3 class="font-semibold text-green-800 mb-2">📍 Punto de Recolección</h3>
+                    <p class="text-green-700 text-sm">Calle 123 # 45-67, Bogotá</p>
+                    <p class="text-green-600 text-xs mt-1">Abierto: Lunes a Viernes 8am-5pm</p>
+                </div>
             </div>
         </div>
-    </div>
-</section>
+    </section>
 
     <!-- Navegación flotante -->
     <nav class="floating-nav hidden" id="floating-nav">
@@ -250,7 +250,7 @@
         window.setDoc = setDoc;
         window.getDoc = getDoc;
         window.updateDoc = updateDoc;
-        window.onSnapshot = onSnapshot;
+        window.onSnapshot = onSnapshot; // Para seguimiento en tiempo real
         window.ref = ref;
         window.uploadBytes = uploadBytes;
         window.getDownloadURL = getDownloadURL;
@@ -676,61 +676,105 @@
             } catch (error) { console.error('Error actualizando estadísticas:', error); }
         }
 
+        // === FUNCIONES PARA EL MAPA Y SEGUIMIENTO EN TIEMPO REAL ===
+
+        // Iniciar el seguimiento en tiempo real de los recicladores
         function iniciarSeguimientoRecicladores() {
-            if (!window.db) { showNotification('Error al iniciar el mapa. Recarga la página.', 'error'); return; }
-            if (seguimientoUnsubscribe && typeof seguimientoUnsubscribe === 'function') { seguimientoUnsubscribe(); }
+            if (!window.db) {
+                showNotification('Error al iniciar el mapa. Recarga la página.', 'error');
+                return;
+            }
+
+            // Detener cualquier seguimiento anterior si existe
+            if (seguimientoUnsubscribe && typeof seguimientoUnsubscribe === 'function') {
+                console.log("Deteniendo seguimiento anterior...");
+                seguimientoUnsubscribe();
+            }
+
+            // Escuchar cambios en la colección 'recicladores'
             const recicladoresRef = window.collection(window.db, 'recicladores');
+            console.log("Iniciando seguimiento en tiempo real de recicladores...");
+
             seguimientoUnsubscribe = window.onSnapshot(recicladoresRef, (querySnapshot) => {
+                console.log(`Snapshot recibido. Cambios: ${querySnapshot.docChanges().length}`);
                 querySnapshot.docChanges().forEach((change) => {
                     if (change.type === "added" || change.type === "modified") {
                         const recicladorData = change.doc.data();
+                        console.log(`Cambio en reciclador: ${change.doc.id}`, recicladorData);
                         actualizarMarcadorReciclador(change.doc.id, recicladorData);
                     }
                     if (change.type === "removed") {
+                        console.log(`Reciclador eliminado: ${change.doc.id}`);
                         eliminarMarcadorReciclador(change.doc.id);
                     }
                 });
             }, (error) => {
-                console.error("Error en seguimiento en tiempo real:", error);
+                console.error("Error en seguimiento en tiempo real de recicladores:", error);
                 showNotification('Error en seguimiento de recicladores en el mapa.', 'error');
             });
         }
 
+        // Actualizar o crear un marcador para un reciclador
         function actualizarMarcadorReciclador(id, data) {
-            if (!mapaLeaflet) return;
-            if (!data.ubicacion || typeof data.ubicacion.lat !== 'number' || typeof data.ubicacion.lng !== 'number') return;
+            if (!mapaLeaflet) {
+                console.warn("Mapa no inicializado, no se puede actualizar marcador de reciclador");
+                return;
+            }
+
+            // Verificar que la ubicación sea válida
+            if (!data.ubicacion || typeof data.ubicacion.lat !== 'number' || typeof data.ubicacion.lng !== 'number') {
+                console.warn(`Datos de ubicación inválidos para reciclador ${id}:`, data.ubicacion);
+                return;
+            }
+
             const latlng = [data.ubicacion.lat, data.ubicacion.lng];
+
             if (marcadoresRecicladores[id]) {
+                // Si el marcador ya existe, actualizar su posición
                 marcadoresRecicladores[id].setLatLng(latlng).update();
                 marcadoresRecicladores[id].bindPopup(`${data.nombre || 'Reciclador'}<br>Estado: ${data.estado || 'Desconocido'}`);
+                console.log(`Marcador de reciclador ${id} actualizado.`);
             } else {
+                // Si no existe, crearlo
                 const marker = L.marker(latlng).addTo(mapaLeaflet);
                 marker.bindPopup(`${data.nombre || 'Reciclador'}<br>Estado: ${data.estado || 'Desconocido'}`);
                 marcadoresRecicladores[id] = marker;
+                console.log(`Nuevo marcador de reciclador ${id} creado.`);
             }
         }
 
+        // Eliminar un marcador de reciclador
         function eliminarMarcadorReciclador(id) {
             if (marcadoresRecicladores[id]) {
                 mapaLeaflet.removeLayer(marcadoresRecicladores[id]);
                 delete marcadoresRecicladores[id];
+                console.log(`Marcador de reciclador ${id} eliminado.`);
             }
         }
 
+        // Inicializar el mapa Leaflet
         function inicializarMapa() {
-            if (mapaLeaflet) return;
+            if (mapaLeaflet) {
+                 console.log("Mapa ya inicializado.");
+                 return;
+            }
+            console.log("Inicializando mapa...");
             try {
                 mapaLeaflet = L.map('map').setView([ubicacionReciclaje.lat, ubicacionReciclaje.lng], 13);
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     attribution: '© OpenStreetMap contributors'
                 }).addTo(mapaLeaflet);
-                // Marcador del punto de reciclaje principal (estático)
-                marcadorActual = L.marker([ubicacionReciclaje.lat, ubicacionReciclaje.lng])
+
+                // Marcador del punto de recolección principal
+                const marcadorPrincipal = L.marker([ubicacionReciclaje.lat, ubicacionReciclaje.lng])
                     .addTo(mapaLeaflet)
                     .bindPopup(ubicacionReciclaje.label)
                     .openPopup();
+                console.log("Marcador principal agregado al mapa.");
+
                 // Iniciar el seguimiento en tiempo real de los recicladores
                 iniciarSeguimientoRecicladores();
+                console.log("Inicialización del mapa completada.");
             } catch (error) {
                 console.error("Error al inicializar el mapa:", error);
                 showNotification('Error al cargar el mapa. Verifica tu conexión.', 'error');
@@ -738,7 +782,10 @@
         }
 
         function mostrarEnMapa(lat, lng, label = "Ubicación") {
-            if (!mapaLeaflet) { inicializarMapa(); if (!mapaLeaflet) return; }
+            if (!mapaLeaflet) { 
+                inicializarMapa(); 
+                if (!mapaLeaflet) return; 
+            }
             
             mapaLeaflet.setView([lat, lng], 15);
             
@@ -819,7 +866,10 @@
         });
 
         window.addEventListener('beforeunload', () => {
-             if (seguimientoUnsubscribe && typeof seguimientoUnsubscribe === 'function') { seguimientoUnsubscribe(); }
+             if (seguimientoUnsubscribe && typeof seguimientoUnsubscribe === 'function') { 
+                 console.log("Deteniendo seguimiento en tiempo real al cerrar la página.");
+                 seguimientoUnsubscribe(); 
+             }
         });
     </script>
 </body>
