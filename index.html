@@ -100,7 +100,7 @@
 
                 <div class="space-y-4">
                     <button onclick="showPantalla('registro')" class="w-full btn-primary text-white px-6 py-4 rounded-2xl font-semibold">
-                        🌱 Crear Cuenta Verde
+                        🌱 Comenzar Ahora
                     </button>
                     <button onclick="showPantalla('registro')" class="w-full bg-white text-green-600 px-6 py-4 rounded-2xl font-semibold border-2 border-green-200 hover:bg-green-50 transition-colors">
                         👤 Ya tengo cuenta
@@ -367,7 +367,7 @@
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
         import { getAnalytics } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js';
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, GoogleAuthProvider, FacebookAuthProvider, signInWithPopup } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
-        import { getFirestore, collection, addDoc, getDocs, query, orderBy, where, doc, setDoc, getDoc, updateDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+        import { getFirestore, collection, addDoc, getDocs, query, orderBy, where, doc, setDoc, getDoc, updateDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
         import { getStorage, ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js';
 
         // === CONFIGURACIÓN ACTUALIZADA PARA TU NUEVO PROYECTO FIREBASE ===
@@ -407,7 +407,6 @@
         window.setDoc = setDoc;
         window.getDoc = getDoc;
         window.updateDoc = updateDoc;
-        window.onSnapshot = onSnapshot; // Para seguimiento en tiempo real
 
         // Exportar funciones de Storage al ámbito global
         window.ref = ref;
@@ -435,16 +434,12 @@
         // Variables globales
         let currentUser = null;
         let mapaLeaflet = null;
-        let marcadorActual = null; // Para el punto de reciclaje principal o dirección del usuario
+        let marcadorActual = null;
         let ubicacionReciclaje = {
             lat: 4.6097,
             lng: -74.0817,
             label: "Punto de Recolección Principal"
         };
-        // Variable global para almacenar referencias a los marcadores de recicladores
-        let marcadoresRecicladores = {};
-        // Variable para almacenar la función de unsubscribe del seguimiento en tiempo real
-        let seguimientoUnsubscribe = null;
 
         // Función para mostrar/ocultar pantallas
         function showPantalla(nombre) {
@@ -705,9 +700,6 @@
                 case 'auth/network-request-failed':
                     message = 'Error de conexión. Verifica tu internet.';
                     break;
-                case 'auth/unauthorized-domain':
-                    message = 'Dominio no autorizado. Contacta al administrador.';
-                    break;
                 // Puedes agregar más casos según sea necesario
             }
             showNotification(message, 'warning');
@@ -726,8 +718,7 @@
                 'auth/too-many-requests': 'Demasiados intentos. Espera un momento',
                 'auth/network-request-failed': 'Error de conexión. Verifica tu internet',
                 'auth/invalid-credential': 'Credenciales inválidas',
-                'auth/missing-password': 'Por favor ingresa una contraseña',
-                'auth/unauthorized-domain': 'Dominio no autorizado para esta operación.'
+                'auth/missing-password': 'Por favor ingresa una contraseña'
             };
             return errorMessages[errorCode] || 'Error de autenticación. Intenta de nuevo';
         }
@@ -954,77 +945,6 @@
         }
 
         // Funciones del mapa
-
-        // Función para escuchar cambios en tiempo real de los recicladores
-        function iniciarSeguimientoRecicladores() {
-            if (!window.db) {
-                console.error("Firestore no está inicializado");
-                return;
-            }
-
-            // Detener cualquier seguimiento anterior si existe
-            if (seguimientoUnsubscribe && typeof seguimientoUnsubscribe === 'function') {
-                seguimientoUnsubscribe();
-            }
-
-            const recicladoresRef = window.collection(window.db, 'recicladores');
-
-            // Escuchar cambios en tiempo real
-            seguimientoUnsubscribe = window.onSnapshot(recicladoresRef, (querySnapshot) => {
-                querySnapshot.docChanges().forEach((change) => {
-                    if (change.type === "added" || change.type === "modified") {
-                        const recicladorData = change.doc.data();
-                        actualizarMarcadorReciclador(change.doc.id, recicladorData);
-                    }
-                    if (change.type === "removed") {
-                        eliminarMarcadorReciclador(change.doc.id);
-                    }
-                });
-            }, (error) => {
-                console.error("Error en seguimiento en tiempo real:", error);
-                showNotification('Error en seguimiento de recicladores.', 'error');
-            });
-        }
-
-        // Función para actualizar o crear un marcador de reciclador
-        function actualizarMarcadorReciclador(id, data) {
-            if (!mapaLeaflet) {
-                console.warn("Mapa no inicializado, no se puede actualizar marcador de reciclador");
-                return;
-            }
-
-            // Verificar que la ubicación sea válida
-            if (!data.ubicacion || typeof data.ubicacion.lat !== 'number' || typeof data.ubicacion.lng !== 'number') {
-                console.warn(`Datos de ubicación inválidos para reciclador ${id}:`, data.ubicacion);
-                return;
-            }
-
-            const latlng = [data.ubicacion.lat, data.ubicacion.lng];
-
-            if (marcadoresRecicladores[id]) {
-                // Si el marcador ya existe, actualizar su posición
-                marcadoresRecicladores[id].setLatLng(latlng).update();
-                // Actualizar el popup con nueva info
-                marcadoresRecicladores[id].bindPopup(`${data.nombre || 'Reciclador'}<br>Estado: ${data.estado || 'Desconocido'}`);
-            } else {
-                // Si no existe, crearlo
-                const marker = L.marker(latlng).addTo(mapaLeaflet);
-                marker.bindPopup(`${data.nombre || 'Reciclador'}<br>Estado: ${data.estado || 'Desconocido'}`);
-                // Puedes usar un ícono personalizado para diferenciarlos
-                // marker.setIcon(iconoReciclador);
-                marcadoresRecicladores[id] = marker;
-            }
-        }
-
-        // Función para eliminar un marcador de reciclador (si se elimina de Firestore)
-        function eliminarMarcadorReciclador(id) {
-            if (marcadoresRecicladores[id]) {
-                mapaLeaflet.removeLayer(marcadoresRecicladores[id]);
-                delete marcadoresRecicladores[id];
-            }
-        }
-
-
         function inicializarMapa() {
             if (!mapaLeaflet) {
                 mapaLeaflet = L.map('map').setView([ubicacionReciclaje.lat, ubicacionReciclaje.lng], 13);
@@ -1033,14 +953,10 @@
                     attribution: '© OpenStreetMap contributors'
                 }).addTo(mapaLeaflet);
 
-                // Marcador del punto de reciclaje principal (estático)
                 marcadorActual = L.marker([ubicacionReciclaje.lat, ubicacionReciclaje.lng])
                     .addTo(mapaLeaflet)
                     .bindPopup(ubicacionReciclaje.label)
                     .openPopup();
-
-                // Iniciar el seguimiento en tiempo real de los recicladores
-                iniciarSeguimientoRecicladores();
             }
         }
 
@@ -1132,13 +1048,6 @@
                     }
                 });
             }
-        });
-
-        // Opcional: Limpiar el seguimiento cuando se cierre la ventana/pestaña
-        window.addEventListener('beforeunload', () => {
-             if (seguimientoUnsubscribe && typeof seguimientoUnsubscribe === 'function') {
-                 seguimientoUnsubscribe();
-             }
         });
     </script>
 </body>
