@@ -88,13 +88,19 @@
                 <form id="formulario-solicitud" class="space-y-5">
                     <div><input type="text" id="nombre-input" placeholder="👤 Nombre completo" class="w-full p-3 rounded-xl bg-gray-50 border-2 border-green-100 focus:border-green-400 focus:outline-none"></div>
                     <div><input type="tel" id="telefono-input" placeholder="📱 Teléfono de contacto" class="w-full p-3 rounded-xl bg-gray-50 border-2 border-green-100 focus:border-green-400 focus:outline-none"></div>
+                    
                     <div>
                         <div class="flex">
                             <input type="text" id="direccion-input" placeholder="📍 Dirección exacta" class="flex-1 p-3 rounded-l-xl bg-gray-50 border-2 border-green-100 focus:border-green-400 focus:outline-none">
                             <button type="button" onclick="verEnMapaDireccion()" class="bg-green-500 text-white px-4 rounded-r-xl hover:bg-green-600 transition-colors">🗺️</button>
                         </div>
+                        <div class="flex mt-1 space-x-1">
+                            <small class="text-gray-500">O</small>
+                            <button type="button" onclick="obtenerUbicacionGPS()" class="text-xs text-green-600 underline hover:text-green-800">Usar mi ubicación actual (GPS)</button>
+                        </div>
                         <div id="direccion-error" class="hidden text-red-500 text-sm mt-1"></div>
                     </div>
+                    
                     <div>
                         <select id="tipo-residuo" required class="w-full p-3 rounded-xl bg-gray-50 border-2 border-green-100 focus:border-green-400 focus:outline-none">
                             <option value="">🗂️ Tipo de Residuo</option>
@@ -113,7 +119,6 @@
                         <input type="file" id="imagen-input" accept="image/*" class="w-full p-3 rounded-xl bg-gray-50 border-2 border-green-100 focus:border-green-400 focus:outline-none">
                     </div>
                     <button type="button" onclick="enviarSolicitud()" class="w-full btn-primary px-6 py-4 rounded-2xl font-semibold">🚛 Solicitar Recolección</button>
-                    <button type="button" onclick="abrirWhatsApp()" class="w-full bg-green-500 text-white px-6 py-4 rounded-2xl font-semibold hover:bg-green-600 transition-colors">💬 Contactar por WhatsApp</button>
                 </form>
             </div>
         </div>
@@ -259,13 +264,16 @@
         window.loginWithFacebook = loginWithFacebook;
         window.enviarSolicitud = enviarSolicitud;
         window.verEnMapaDireccion = verEnMapaDireccion;
+        window.obtenerUbicacionGPS = obtenerUbicacionGPS; // Exportar la nueva función
     </script>
 
     <script>
         let currentUser = null;
         let mapaLeaflet = null;
-        let marcadorActual = null;
+        let marcadorActual = null; // Para el punto de reciclaje principal o la dirección del usuario
+        let marcadorUsuarioGPS = null; // Nuevo marcador para la ubicación del GPS
         let ubicacionReciclaje = { lat: 4.6097, lng: -74.0817, label: "Punto de Recolección Principal" };
+        let ubicacionUsuario = { lat: null, lng: null, label: "Tu Ubicación (GPS)" }; // Para almacenar la ubicación del usuario
         let marcadoresRecicladores = {};
         let seguimientoUnsubscribe = null;
 
@@ -282,7 +290,15 @@
             document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
             switch (nombre) {
                 case 'mapa':
-                    setTimeout(() => { inicializarMapa(); mostrarEnMapa(ubicacionReciclaje.lat, ubicacionReciclaje.lng, ubicacionReciclaje.label); }, 200);
+                    setTimeout(() => { 
+                        inicializarMapa(); 
+                        // Mostrar la ubicación del usuario si está disponible, de lo contrario la del reciclaje
+                        if (ubicacionUsuario.lat && ubicacionUsuario.lng) {
+                             mostrarEnMapa(ubicacionUsuario.lat, ubicacionUsuario.lng, ubicacionUsuario.label);
+                        } else {
+                             mostrarEnMapa(ubicacionReciclaje.lat, ubicacionReciclaje.lng, ubicacionReciclaje.label);
+                        }
+                    }, 200);
                     break;
                 case 'estadistica':
                     if (currentUser) { cargarDatosUsuario(); }
@@ -526,6 +542,64 @@
             }
         }
 
+        // === NUEVA FUNCIÓN PARA OBTENER UBICACIÓN DEL USUARIO MEDIANTE GPS ===
+        function obtenerUbicacionGPS() {
+            if (!navigator.geolocation) {
+                showNotification("Tu navegador no soporta la geolocalización.", 'error');
+                return;
+            }
+
+            showAuthStatus(true, 'Obteniendo tu ubicación...');
+            navigator.geolocation.getCurrentPosition(
+                function (position) {
+                    ubicacionUsuario.lat = position.coords.latitude;
+                    ubicacionUsuario.lng = position.coords.longitude;
+                    console.log(`Ubicación del usuario (GPS) obtenida: ${ubicacionUsuario.lat}, ${ubicacionUsuario.lng}`);
+                    showNotification('Ubicación obtenida exitosamente!', 'success');
+                    showAuthStatus(false);
+                    
+                    // Actualizar el campo de dirección con las coordenadas
+                    const direccionInput = document.getElementById('direccion-input');
+                    if (direccionInput) {
+                         direccionInput.value = `${ubicacionUsuario.lat.toFixed(6)}, ${ubicacionUsuario.lng.toFixed(6)}`;
+                    }
+                    
+                    // Mostrar la ubicación en el mapa si ya está inicializado
+                    if (mapaLeaflet) {
+                         mostrarEnMapa(ubicacionUsuario.lat, ubicacionUsuario.lng, ubicacionUsuario.label);
+                    } else {
+                        // Si el mapa no está inicializado, mostrarlo
+                        showPantalla('mapa');
+                    }
+                },
+                function (error) {
+                    console.error('Error al obtener la ubicación:', error);
+                    let errorMsg = 'No se pudo obtener tu ubicación.';
+                    switch(error.code) {
+                        case error.PERMISSION_DENIED:
+                            errorMsg += ' Permiso denegado. Habilita la ubicación en tu navegador.';
+                            break;
+                        case error.POSITION_UNAVAILABLE:
+                            errorMsg += ' La información de ubicación no está disponible.';
+                            break;
+                        case error.TIMEOUT:
+                            errorMsg += ' La solicitud de ubicación ha expirado.';
+                            break;
+                        default:
+                            errorMsg += ' Error desconocido.';
+                            break;
+                    }
+                    showNotification(errorMsg, 'error');
+                    showAuthStatus(false);
+                },
+                {
+                    enableHighAccuracy: true, // Solicitar la mejor precisión posible
+                    timeout: 10000,           // Tiempo máximo de espera de 10 segundos
+                    maximumAge: 60000         // Usar caché de hasta 1 minuto
+                }
+            );
+        }
+
         async function enviarSolicitud() {
             if (!currentUser) { showNotification('Debes iniciar sesión para enviar una solicitud', 'warning'); showPantalla('registro'); return; }
             const nombre = document.getElementById('nombre-input')?.value;
@@ -543,15 +617,36 @@
                     const snapshot = await window.uploadBytes(imagenRef, imagenFile);
                     imagenUrl = await window.getDownloadURL(snapshot.ref);
                 }
+                
+                // Determinar qué ubicación usar para la solicitud
+                let ubicacionParaGuardar;
+                if (ubicacionUsuario.lat && ubicacionUsuario.lng) {
+                    // Si se obtuvo ubicación por GPS, usar esa
+                    ubicacionParaGuardar = { lat: ubicacionUsuario.lat, lng: ubicacionUsuario.lng };
+                } else {
+                    // Si no, usar la ubicación del reciclaje (o podrías dejarla vacía y manejarla en el backend)
+                    ubicacionParaGuardar = { lat: ubicacionReciclaje.lat, lng: ubicacionReciclaje.lng };
+                }
+
                 const solicitud = {
-                    nombre, telefono, direccion, tipoResiduo, peso: peso || 'No especificado', imagenUrl,
-                    ubicacion: ubicacionReciclaje, fecha: new Date(), estado: 'pendiente', userId: currentUser?.uid || 'anonimo'
+                    nombre,
+                    telefono,
+                    direccion, // Guardar la dirección textual ingresada o las coordenadas del GPS
+                    tipoResiduo,
+                    peso: peso || 'No especificado',
+                    imagenUrl,
+                    ubicacion: ubicacionParaGuardar, // Guardar la ubicación (lat/lng) para el mapa
+                    fecha: new Date(),
+                    estado: 'pendiente',
+                    userId: currentUser?.uid || 'anonimo'
                 };
                 const docRef = await window.addDoc(window.collection(window.db, 'solicitudes'), solicitud);
                 await actualizarEstadisticasUsuario(peso);
                 showNotification('¡Solicitud enviada exitosamente! 🎉', 'success');
                 const form = document.getElementById('formulario-solicitud');
                 if (form) form.reset();
+                // Limpiar la ubicación del usuario después de enviar
+                ubicacionUsuario = { lat: null, lng: null, label: "Tu Ubicación (GPS)" };
             } catch (error) {
                 console.error('Error enviando solicitud:', error);
                 let mensajeError = 'Error enviando solicitud. Intenta de nuevo.';
@@ -629,10 +724,12 @@
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     attribution: '© OpenStreetMap contributors'
                 }).addTo(mapaLeaflet);
+                // Marcador del punto de reciclaje principal (estático)
                 marcadorActual = L.marker([ubicacionReciclaje.lat, ubicacionReciclaje.lng])
                     .addTo(mapaLeaflet)
                     .bindPopup(ubicacionReciclaje.label)
                     .openPopup();
+                // Iniciar el seguimiento en tiempo real de los recicladores
                 iniciarSeguimientoRecicladores();
             } catch (error) {
                 console.error("Error al inicializar el mapa:", error);
@@ -640,13 +737,27 @@
             }
         }
 
-        function mostrarEnMapa(lat, lng, label = "Ubicación de entrega") {
+        function mostrarEnMapa(lat, lng, label = "Ubicación") {
             if (!mapaLeaflet) { inicializarMapa(); if (!mapaLeaflet) return; }
+            
             mapaLeaflet.setView([lat, lng], 15);
-            if (marcadorActual) {
-                marcadorActual.setLatLng([lat, lng]).setPopupContent(label).openPopup();
+            
+            // Manejar el marcador del usuario (GPS)
+            if (label === ubicacionUsuario.label && ubicacionUsuario.lat && ubicacionUsuario.lng) {
+                if (marcadorUsuarioGPS) {
+                    marcadorUsuarioGPS.setLatLng([lat, lng]).setPopupContent(label).openPopup();
+                } else {
+                    marcadorUsuarioGPS = L.marker([lat, lng], {title: "Tu Ubicación"}).addTo(mapaLeaflet).bindPopup(label).openPopup();
+                }
+                // Opcional: Centrar el mapa en la ubicación del usuario
+                // mapaLeaflet.setView([lat, lng], 16);
             } else {
-                marcadorActual = L.marker([lat, lng]).addTo(mapaLeaflet).bindPopup(label).openPopup();
+                // Manejar otros marcadores (punto de reciclaje, direcciones buscadas)
+                if (marcadorActual) {
+                    marcadorActual.setLatLng([lat, lng]).setPopupContent(label).openPopup();
+                } else {
+                    marcadorActual = L.marker([lat, lng]).addTo(mapaLeaflet).bindPopup(label).openPopup();
+                }
             }
         }
 
@@ -683,6 +794,8 @@
                 ubicacionReciclaje.label = direccion;
                 showNotification('¡Dirección encontrada! 📍', 'success');
                 showPantalla('mapa');
+                // Limpiar la ubicación del usuario ya que se usó una dirección manual
+                ubicacionUsuario = { lat: null, lng: null, label: "Tu Ubicación (GPS)" };
             }).catch(error => {
                 console.error('Error buscando dirección:', error);
                 if (errorMsg) {
