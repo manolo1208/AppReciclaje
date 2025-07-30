@@ -4,12 +4,257 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>ReciclApp - Reciclaje Inteligente</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Firebase SDK v9+ Modular (moderno y recomendado) -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+        import { getFirestore, collection, doc, setDoc, getDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+        // 🔐 Configuración de Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyCIra7bW5kBj3ynwsAf-H-c97vWgptfnaE",
+            authDomain: "appreciclaje-b7b2a.firebaseapp.com",
+            projectId: "appreciclaje-b7b2a",
+            storageBucket: "appreciclaje-b7b2a.appspot.com",
+            messagingSenderId: "675875410563",
+            appId: "1:675875410563:web:18254ae4f8d9c8e9f3c123"
+        };
+
+        // Inicializar Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const googleProvider = new GoogleAuthProvider();
+
+        // Variables globales
+        let currentUser = null;
+        let userRole = null;
+
+        // Elementos del DOM
+        const loadingScreen = document.getElementById('loading-screen');
+        const authScreen = document.getElementById('auth-screen');
+        const appContainer = document.getElementById('app-container');
+
+        // === FUNCIONES ===
+
+        // Validar email
+        function validateEmail(email) {
+            const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return re.test(email);
+        }
+
+        // Manejo de errores de Firebase
+        function getFirebaseErrorMessage(errorCode) {
+            const messages = {
+                'auth/network-request-failed': 'Sin conexión a internet. Verifica tu red.',
+                'auth/invalid-credential': 'Email o contraseña incorrectos.',
+                'auth/user-disabled': 'Esta cuenta está deshabilitada.',
+                'auth/too-many-requests': 'Demasiados intentos. Espera un momento.',
+                'auth/invalid-email': 'Formato de email inválido.',
+                'auth/weak-password': 'La contraseña debe tener al menos 6 caracteres.',
+                'auth/email-already-in-use': 'Este email ya está registrado.',
+                'auth/user-not-found': 'No se encontró una cuenta con ese email.',
+                'auth/wrong-password': 'Contraseña incorrecta.',
+                'auth/popup-blocked': 'Ventana emergente bloqueada. Permite popups.',
+                'auth/popup-closed-by-user': 'Inicio de sesión cancelado.',
+                'auth/cancelled-popup-request': 'Operación cancelada. Intenta de nuevo.'
+            };
+            return messages[errorCode] || 'Error desconocido. Intenta más tarde.';
+        }
+
+        // Mostrar notificación
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 z-50 px-6 py-3 rounded-lg shadow-lg text-white font-medium transform transition-transform duration-300 translate-x-full max-w-xs`;
+            
+            const colors = {
+                success: 'bg-green-500',
+                error: 'bg-red-500',
+                warning: 'bg-yellow-500',
+                info: 'bg-blue-500'
+            };
+            notification.classList.add(colors[type] || colors.info);
+            notification.textContent = message;
+
+            document.body.appendChild(notification);
+            setTimeout(() => notification.classList.remove('translate-x-full'), 100);
+            setTimeout(() => {
+                notification.classList.add('translate-x-full');
+                setTimeout(() => {
+                    if (notification.parentNode) notification.remove();
+                }, 300);
+            }, 3000);
+        }
+
+        // Mostrar pantalla de autenticación
+        function showAuthScreen() {
+            authScreen.classList.remove('hidden');
+            appContainer.classList.add('hidden');
+        }
+
+        // Mostrar app principal
+        function showMainApp() {
+            authScreen.classList.add('hidden');
+            appContainer.classList.remove('hidden');
+        }
+
+        // Cargar datos del usuario
+        async function loadUserData(user) {
+            try {
+                const userDocRef = doc(db, 'usuarios', user.uid);
+                const userDoc = await getDoc(userDocRef);
+                
+                if (userDoc.exists()) {
+                    const userData = userDoc.data();
+                    userRole = userData.rol;
+                    document.getElementById('user-name').textContent = userData.nombre || 'Usuario';
+                } else {
+                    // Si no existe, crear perfil básico
+                    await setDoc(userDocRef, {
+                        nombre: user.displayName || user.email.split('@')[0],
+                        email: user.email,
+                        rol: 'usuario',
+                        organizacion: '',
+                        fechaRegistro: new Date(),
+                        activo: true
+                    });
+                    userRole = 'usuario';
+                    document.getElementById('user-name').textContent = user.displayName || 'Usuario';
+                }
+            } catch (error) {
+                console.error('Error al cargar datos del usuario:', error);
+                showNotification('No se pudo cargar tu perfil. Usa modo offline.', 'warning');
+                userRole = 'usuario'; // Rol por defecto
+                document.getElementById('user-name').textContent = user.displayName || 'Usuario';
+            }
+        }
+
+        // === EVENTOS DE AUTENTICACIÓN ===
+
+        // Estado de autenticación
+        auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                currentUser = user;
+                await loadUserData(user);
+                showMainApp();
+            } else {
+                currentUser = null;
+                userRole = null;
+                showAuthScreen();
+            }
+            // Ocultar loading después de definir estado
+            setTimeout(() => loadingScreen.classList.add('hidden'), 500);
+        });
+
+        // Login con email
+        document.getElementById('login-form')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email-login').value.trim();
+            const password = document.getElementById('password-login').value.trim();
+
+            if (!email || !password) return showNotification('Completa todos los campos', 'error');
+            if (!validateEmail(email)) return showNotification('Email inválido', 'error');
+
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+                showNotification('¡Bienvenido de vuelta!', 'success');
+            } catch (error) {
+                const msg = getFirebaseErrorMessage(error.code);
+                showNotification(`Error: ${msg}`, 'error');
+            }
+        });
+
+        // Registro
+        document.getElementById('signup-form')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const nombre = document.getElementById('nombre-register').value.trim();
+            const email = document.getElementById('email-register').value.trim();
+            const password = document.getElementById('password-register').value.trim();
+            const rol = document.getElementById('rol-register').value;
+            const organizacion = document.getElementById('organizacion-register').value.trim();
+
+            if (!nombre || !email || !password || !rol) return showNotification('Completa todos los campos', 'error');
+            if (!validateEmail(email)) return showNotification('Email inválido', 'error');
+            if (password.length < 6) return showNotification('La contraseña debe tener al menos 6 caracteres', 'error');
+
+            try {
+                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                const user = userCredential.user;
+
+                await setDoc(doc(db, 'usuarios', user.uid), {
+                    nombre,
+                    email,
+                    rol,
+                    organizacion: rol === 'reciclador' ? organizacion : '',
+                    fechaRegistro: new Date(),
+                    activo: true
+                });
+
+                showNotification('¡Registro exitoso! Bienvenido 🌱', 'success');
+                document.getElementById('signup-form').reset();
+            } catch (error) {
+                const msg = getFirebaseErrorMessage(error.code);
+                showNotification(`Error: ${msg}`, 'error');
+            }
+        });
+
+        // Login con Google
+        document.getElementById('login-google')?.addEventListener('click', async () => {
+            try {
+                const result = await signInWithPopup(auth, googleProvider);
+                const user = result.user;
+                showNotification('¡Inicio de sesión con Google exitoso!', 'success');
+            } catch (error) {
+                const msg = getFirebaseErrorMessage(error.code);
+                showNotification(`Google: ${msg}`, 'error');
+            }
+        });
+
+        // Alternar entre login y registro
+        document.getElementById('show-register')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            document.getElementById('login-form')?.classList.add('hidden');
+            document.getElementById('register-form')?.classList.remove('hidden');
+        });
+
+        document.getElementById('show-login')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            document.getElementById('register-form')?.classList.add('hidden');
+            document.getElementById('login-form')?.classList.remove('hidden');
+        });
+
+        // Mostrar campo de organización solo para recicladores
+        document.getElementById('rol-register')?.addEventListener('change', (e) => {
+            const orgField = document.getElementById('organizacion-field');
+            if (e.target.value === 'reciclador') {
+                orgField.classList.remove('hidden');
+                document.getElementById('organizacion-register').required = true;
+            } else {
+                orgField.classList.add('hidden');
+                document.getElementById('organizacion-register').required = false;
+            }
+        });
+
+        // Cerrar sesión
+        document.getElementById('logout-btn')?.addEventListener('click', async () => {
+            try {
+                await signOut(auth);
+                showNotification('Sesión cerrada', 'info');
+            } catch (error) {
+                showNotification('Error al cerrar sesión', 'error');
+            }
+        });
+
+        // Inicialización
+        document.addEventListener('DOMContentLoaded', () => {
+            // El estado de autenticación se maneja con onAuthStateChanged
+        });
+    </script>
+
     <style>
         .fade-in { animation: fadeIn 0.3s ease-in; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -23,7 +268,7 @@
     </style>
 </head>
 <body class="bg-gray-50 font-sans">
-    <!-- Loading Screen -->
+    <!-- Pantalla de carga -->
     <div id="loading-screen" class="fixed inset-0 bg-green-600 flex items-center justify-center z-50">
         <div class="text-center text-white">
             <i class="fas fa-recycle text-6xl mb-4 animate-spin"></i>
@@ -31,8 +276,8 @@
             <p class="text-green-200">Conectando el mundo del reciclaje...</p>
         </div>
     </div>
-    
-    <!-- Authentication Screen -->
+
+    <!-- Pantalla de autenticación -->
     <div id="auth-screen" class="hidden min-h-screen bg-gradient-to-b from-green-600 to-green-800 p-6">
         <div class="max-w-md mx-auto">
             <div class="text-center text-white mb-12 pt-20">
@@ -40,11 +285,11 @@
                 <h1 class="text-4xl font-bold mb-2">ReciclApp</h1>
                 <p class="text-green-200">Tu plataforma de reciclaje inteligente</p>
             </div>
-            
-            <!-- Login Form -->
-            <div class="bg-white rounded-2xl p-6 shadow-xl fade-in">
+
+            <!-- Formulario de login -->
+            <form id="login-form" class="bg-white rounded-2xl p-6 shadow-xl fade-in">
                 <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Iniciar Sesión</h2>
-                <form id="login-form" class="space-y-4">
+                <div class="space-y-4">
                     <div>
                         <label class="block text-gray-700 text-sm font-semibold mb-2">Email</label>
                         <input type="email" id="email-login" required 
@@ -55,16 +300,16 @@
                         <input type="password" id="password-login" required 
                                class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent">
                     </div>
-                    <button type="submit" id="login-email" 
+                    <button type="submit" 
                             class="w-full bg-green-600 text-white py-3 rounded-xl font-semibold hover:bg-green-700 transition-colors">
                         Iniciar Sesión
                     </button>
-                </form>
+                </div>
                 <div class="my-6 text-center">
                     <span class="text-gray-500">o</span>
                     <hr class="border-gray-300 my-2">
                 </div>
-                <button id="login-google" 
+                <button type="button" id="login-google" 
                         class="w-full bg-red-500 text-white py-3 rounded-xl font-semibold hover:bg-red-600 transition-colors flex items-center justify-center">
                     <i class="fab fa-google mr-2"></i>
                     Continuar con Google
@@ -74,12 +319,12 @@
                         ¿No tienes cuenta? Regístrate
                     </button>
                 </div>
-            </div>
-            
-            <!-- Register Form -->
-            <div id="register-form" class="hidden bg-white rounded-2xl p-6 shadow-xl fade-in">
-                <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Registro</h2>
-                <form id="signup-form" class="space-y-4">
+            </form>
+
+            <!-- Formulario de registro -->
+            <form id="signup-form" class="hidden bg-white rounded-2xl p-6 shadow-xl fade-in">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Crear Cuenta</h2>
+                <div class="space-y-4">
                     <div>
                         <label class="block text-gray-700 text-sm font-semibold mb-2">Nombre completo</label>
                         <input type="text" id="nombre-register" required 
@@ -105,7 +350,7 @@
                         </select>
                     </div>
                     <div id="organizacion-field" class="hidden">
-                        <label class="block text-gray-700 text-sm font-semibold mb-2">Organización</label>
+                        <label class="block text-gray-700 text-sm font-semibold mb-2">Organización (opcional)</label>
                         <input type="text" id="organizacion-register" 
                                class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent">
                     </div>
@@ -113,19 +358,18 @@
                             class="w-full bg-green-600 text-white py-3 rounded-xl font-semibold hover:bg-green-700 transition-colors">
                         Registrarse
                     </button>
-                </form>
+                </div>
                 <div class="mt-6 text-center">
                     <button id="show-login" class="text-green-600 font-semibold hover:underline">
                         ¿Ya tienes cuenta? Iniciar sesión
                     </button>
                 </div>
-            </div>
+            </form>
         </div>
     </div>
-    
-    <!-- Main App Container -->
+
+    <!-- App principal (oculta por defecto) -->
     <div id="app-container" class="hidden">
-        <!-- Header -->
         <header class="bg-white shadow-sm sticky top-0 z-40">
             <div class="px-4 py-3 flex items-center justify-between">
                 <div class="flex items-center">
@@ -133,269 +377,21 @@
                     <h1 class="text-xl font-bold text-gray-800">ReciclApp</h1>
                 </div>
                 <div class="flex items-center space-x-3">
-                    <span id="user-name" class="text-gray-700 text-sm"></span>
+                    <span id="user-name" class="text-gray-700 text-sm">Cargando...</span>
                     <button id="logout-btn" class="text-gray-500 hover:text-red-500 transition-colors">
                         <i class="fas fa-sign-out-alt"></i>
                     </button>
                 </div>
             </div>
         </header>
-        
-        <!-- Rest of your app content -->
+
+        <!-- Aquí va el resto de tu app: mapas, solicitudes, estadísticas, etc. -->
+        <main class="p-6">
+            <div class="bg-white rounded-2xl p-6 shadow">
+                <h2 class="text-xl font-bold text-gray-800 mb-4">¡Bienvenido a ReciclApp!</h2>
+                <p class="text-gray-600">Tu impacto verde comienza aquí. 🌍</p>
+            </div>
+        </main>
     </div>
-    
-    <script>
-        // Configuración de Firebase
-        const firebaseConfig = {
-            apiKey: "AIzaSyCIra7bW5kBj3ynwsAf-H-c97vWgptfnaE",
-            authDomain: "appreciclaje-b7b2a.firebaseapp.com",
-            projectId: "appreciclaje-b7b2a",
-            storageBucket: "appreciclaje-b7b2a.appspot.com",
-            messagingSenderId: "675875410563",
-            appId: "1:675875410563:web:18254ae4f8d9c8e9f3c123"
-        };
-        
-        // Inicializar Firebase
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.firestore();
-        const storage = firebase.storage();
-        
-        // Variables globales
-        let currentUser = null;
-        let userRole = null;
-        
-        // Elementos del DOM
-        const loadingScreen = document.getElementById('loading-screen');
-        const authScreen = document.getElementById('auth-screen');
-        const appContainer = document.getElementById('app-container');
-        
-        // Validación de email
-        function validateEmail(email) {
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            return emailRegex.test(email);
-        }
-        
-        // Manejo de errores de Firebase
-        function getFirebaseErrorMessage(errorCode) {
-            const errorMessages = {
-                'auth/network-request-failed': 'Error de conexión. Verifica tu internet.',
-                'auth/invalid-credential': 'Credenciales inválidas. Verifica tu email y contraseña.',
-                'auth/user-disabled': 'Esta cuenta ha sido deshabilitada.',
-                'auth/too-many-requests': 'Demasiados intentos. Espera un momento.',
-                'auth/invalid-email': 'Email inválido. Por favor, verifica el formato.',
-                'auth/weak-password': 'La contraseña es muy débil. Usa al menos 6 caracteres.',
-                'auth/email-already-in-use': 'Este email ya está registrado.',
-                'auth/user-not-found': 'Usuario no encontrado. ¿Has creado una cuenta?',
-                'auth/wrong-password': 'Contraseña incorrecta.',
-                'auth/popup-blocked': 'Ventana emergente bloqueada. Permite popups e intenta de nuevo.',
-                'auth/popup-closed-by-user': 'Ventana cerrada por el usuario. Vuelve a intentarlo.'
-            };
-            return errorMessages[errorCode] || 'Error de autenticación. Intenta de nuevo.';
-        }
-        
-        // Mostrar notificaciones
-        function showNotification(message, type = 'info') {
-            const notification = document.createElement('div');
-            notification.className = `fixed top-4 right-4 z-50 px-6 py-3 rounded-lg shadow-lg text-white font-medium transform transition-transform duration-300 translate-x-full`;
-            const colors = {
-                'success': 'bg-green-500',
-                'error': 'bg-red-500',
-                'warning': 'bg-yellow-500',
-                'info': 'bg-blue-500'
-            };
-            notification.classList.add(colors[type] || colors.info);
-            notification.textContent = message;
-            document.body.appendChild(notification);
-            
-            setTimeout(() => {
-                notification.classList.remove('translate-x-full');
-            }, 100);
-            
-            setTimeout(() => {
-                notification.classList.add('translate-x-full');
-                setTimeout(() => {
-                    document.body.removeChild(notification);
-                }, 300);
-            }, 3000);
-        }
-        
-        // Monitor de estado de autenticación
-        auth.onAuthStateChanged(async (user) => {
-            if (user) {
-                currentUser = user;
-                try {
-                    const userDoc = await db.collection('usuarios').doc(user.uid).get();
-                    if (userDoc.exists) {
-                        const userData = userDoc.data();
-                        userRole = userData.rol;
-                        document.getElementById('user-name').textContent = userData.nombre;
-                    }
-                    showMainApp();
-                } catch (error) {
-                    console.error('Error al cargar datos del usuario:', error);
-                    showNotification('Error al cargar datos del usuario', 'error');
-                }
-            } else {
-                currentUser = null;
-                showAuthScreen();
-            }
-        });
-        
-        // Formulario de login
-        document.getElementById('login-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const email = document.getElementById('email-login').value.trim();
-            const password = document.getElementById('password-login').value.trim();
-            
-            // Validación
-            if (!email || !password) {
-                showNotification('Por favor, completa todos los campos', 'error');
-                return;
-            }
-            
-            if (!validateEmail(email)) {
-                showNotification('Por favor, ingresa un correo electrónico válido', 'error');
-                return;
-            }
-            
-            try {
-                await auth.signInWithEmailAndPassword(email, password);
-                showNotification('¡Inicio de sesión exitoso!', 'success');
-            } catch (error) {
-                const errorMessage = getFirebaseErrorMessage(error.code);
-                showNotification('Error al iniciar sesión: ' + errorMessage, 'error');
-                console.error('Error de autenticación:', error);
-            }
-        });
-        
-        // Formulario de registro
-        document.getElementById('signup-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const nombre = document.getElementById('nombre-register').value.trim();
-            const email = document.getElementById('email-register').value.trim();
-            const password = document.getElementById('password-register').value.trim();
-            const rol = document.getElementById('rol-register').value;
-            const organizacion = document.getElementById('organizacion-register').value.trim();
-            
-            // Validación
-            if (!nombre || !email || !password || !rol) {
-                showNotification('Por favor, completa todos los campos requeridos', 'error');
-                return;
-            }
-            
-            if (!validateEmail(email)) {
-                showNotification('Por favor, ingresa un correo electrónico válido', 'error');
-                return;
-            }
-            
-            if (password.length < 6) {
-                showNotification('La contraseña debe tener al menos 6 caracteres', 'error');
-                return;
-            }
-            
-            try {
-                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
-                const user = userCredential.user;
-                
-                // Crear documento del usuario en Firestore
-                await db.collection('usuarios').doc(user.uid).set({
-                    nombre: nombre,
-                    email: email,
-                    rol: rol,
-                    organizacion: organizacion || '',
-                    fechaRegistro: firebase.firestore.FieldValue.serverTimestamp(),
-                    activo: true
-                });
-                
-                showNotification('¡Registro exitoso!', 'success');
-            } catch (error) {
-                const errorMessage = getFirebaseErrorMessage(error.code);
-                showNotification('Error al registrarse: ' + errorMessage, 'error');
-                console.error('Error de registro:', error);
-            }
-        });
-        
-        // Login con Google
-        document.getElementById('login-google').addEventListener('click', async () => {
-            const provider = new firebase.auth.GoogleAuthProvider();
-            try {
-                const result = await auth.signInWithPopup(provider);
-                const user = result.user;
-                
-                // Verificar si es usuario nuevo
-                const userDoc = await db.collection('usuarios').doc(user.uid).get();
-                if (!userDoc.exists) {
-                    // Crear documento para nuevo usuario
-                    await db.collection('usuarios').doc(user.uid).set({
-                        nombre: user.displayName,
-                        email: user.email,
-                        rol: 'usuario',
-                        organizacion: '',
-                        fechaRegistro: firebase.firestore.FieldValue.serverTimestamp(),
-                        activo: true
-                    });
-                }
-                
-                showNotification('¡Inicio de sesión exitoso!', 'success');
-            } catch (error) {
-                const errorMessage = getFirebaseErrorMessage(error.code);
-                showNotification('Error al iniciar sesión con Google: ' + errorMessage, 'error');
-                console.error('Error de autenticación con Google:', error);
-            }
-        });
-        
-        // Alternar entre login y registro
-        document.getElementById('show-register').addEventListener('click', () => {
-            document.querySelector('#auth-screen > div > div:first-child').classList.add('hidden');
-            document.getElementById('register-form').classList.remove('hidden');
-        });
-        
-        document.getElementById('show-login').addEventListener('click', () => {
-            document.getElementById('register-form').classList.add('hidden');
-            document.querySelector('#auth-screen > div > div:first-child').classList.remove('hidden');
-        });
-        
-        // Mostrar campo organización para recicladores
-        document.getElementById('rol-register').addEventListener('change', (e) => {
-            const orgField = document.getElementById('organizacion-field');
-            if (e.target.value === 'reciclador') {
-                orgField.classList.remove('hidden');
-                document.getElementById('organizacion-register').required = true;
-            } else {
-                orgField.classList.add('hidden');
-                document.getElementById('organizacion-register').required = false;
-            }
-        });
-        
-        // Logout
-        document.getElementById('logout-btn').addEventListener('click', async () => {
-            try {
-                await auth.signOut();
-                showNotification('Sesión cerrada', 'info');
-            } catch (error) {
-                showNotification('Error al cerrar sesión', 'error');
-            }
-        });
-        
-        function showAuthScreen() {
-            authScreen.classList.remove('hidden');
-            appContainer.classList.add('hidden');
-        }
-        
-        function showMainApp() {
-            authScreen.classList.add('hidden');
-            appContainer.classList.remove('hidden');
-        }
-        
-        // Inicialización de la aplicación
-        document.addEventListener('DOMContentLoaded', function() {
-            // Ocultar loading después de 2 segundos
-            setTimeout(() => {
-                loadingScreen.classList.add('hidden');
-                authScreen.classList.remove('hidden');
-            }, 2000);
-        });
-    </script>
 </body>
 </html>
