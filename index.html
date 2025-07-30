@@ -1,397 +1,683 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>ReciclApp - Reciclaje Inteligente</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <title>ReciclApp - Tu Impacto Verde</title>
+
     <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <!-- Firebase SDK v9+ Modular (moderno y recomendado) -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+
+    <!-- Leaflet (mapa) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- Font Awesome (íconos) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" />
+
+    <!-- Estilos personalizados -->
+    <style>
+        @layer base {
+            :root {
+                --eco-green: #4ade80;
+                --eco-dark: #166534;
+                --eco-light: #dcfce7;
+                --eco-yellow: #fde047;
+            }
+            body {
+                @apply font-sans bg-emerald-50 text-slate-800;
+            }
+            .eco-gradient {
+                background: linear-gradient(135deg, #4ade80 0%, #166534 100%);
+            }
+            .eco-card {
+                background: rgba(255, 255, 255, 0.95);
+                backdrop-filter: blur(10px);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+            }
+            .btn-primary {
+                @apply bg-gradient-to-r from-green-500 to-green-700 text-white shadow-lg shadow-green-500/30 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl;
+            }
+            .floating-nav {
+                @apply fixed bottom-8 left-1/2 -translate-x-1/2 bg-white rounded-full p-2 shadow-xl z-50;
+            }
+            .progress-bar {
+                background: linear-gradient(90deg, var(--eco-green), var(--eco-yellow));
+                @apply rounded-full transition-all duration-1000 ease-out;
+            }
+            .notification {
+                @apply fixed top-4 right-4 max-w-xs z-50 px-6 py-3 rounded-lg shadow-lg text-white font-medium transform transition-transform duration-300 translate-x-full;
+            }
+            .hidden {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Pantalla principal -->
+    <section id="pantalla-principal" class="min-h-screen eco-gradient flex flex-col justify-center items-center px-6">
+        <div class="w-full max-w-sm mx-auto text-center">
+            <div class="eco-card rounded-3xl p-8 shadow-2xl mb-8">
+                <div class="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <span class="text-4xl">♻️</span>
+                </div>
+                <h1 class="text-3xl font-bold text-gray-800 mb-4">AppReciclaje</h1>
+                <p class="text-gray-600 mb-8">Transforma tu impacto ambiental en recompensas. ¡Únete a la revolución verde!</p>
+                <div class="space-y-4">
+                    <button onclick="showPantalla('registro')" class="w-full btn-primary px-6 py-4 rounded-2xl font-semibold">🌱 Crear Cuenta Verde</button>
+                    <button onclick="showPantalla('registro')" class="w-full bg-white text-green-600 px-6 py-4 rounded-2xl font-semibold border-2 border-green-200 hover:bg-green-50 transition-colors">👤 Ya tengo cuenta</button>
+                </div>
+            </div>
+            <p class="text-white text-sm opacity-80">Juntos por un planeta más limpio 🌍</p>
+        </div>
+    </section>
+
+    <!-- Pantalla registro/login -->
+    <section id="pantalla-registro" class="hidden min-h-screen eco-gradient flex flex-col justify-center items-center px-6">
+        <div class="w-full max-w-sm mx-auto">
+            <div class="eco-card rounded-3xl p-8 shadow-2xl">
+                <div class="flex items-center justify-between mb-8">
+                    <button onclick="showPantalla('principal')" class="p-2 rounded-full bg-green-100 text-green-600 hover:bg-green-200 transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                    </button>
+                    <h2 class="text-xl font-bold text-gray-800">🌱 EcoLogin</h2>
+                    <div class="w-10"></div>
+                </div>
+                <div class="space-y-6">
+                    <div><input type="email" id="email-input" placeholder="📧 Correo Electrónico" class="w-full p-4 rounded-xl bg-gray-50 border-2 border-green-100 focus:border-green-400 focus:outline-none"></div>
+                    <div><input type="password" id="password-input" placeholder="🔒 Contraseña (mín. 6 caracteres)" class="w-full p-4 rounded-xl bg-gray-50 border-2 border-green-100 focus:border-green-400 focus:outline-none"></div>
+                    <div id="auth-status" class="hidden flex items-center justify-center p-3 bg-blue-50 rounded-xl">
+                        <div class="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mr-3"></div>
+                        <span class="text-blue-600" id="auth-status-text">Procesando...</span>
+                    </div>
+                    <div class="space-y-4">
+                        <button onclick="loginUser()" class="w-full btn-primary px-6 py-4 rounded-2xl font-semibold">🔐 Iniciar Sesión</button>
+                        <button onclick="registerUser()" class="w-full bg-white text-green-600 px-6 py-4 rounded-2xl font-semibold border-2 border-green-200 hover:bg-green-50 transition-colors">📝 Registrarse</button>
+                    </div>
+                    <div class="relative my-6">
+                        <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-gray-300"></div></div>
+                        <div class="relative flex justify-center text-sm"><span class="px-2 bg-white text-gray-500">O continúa con</span></div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <button onclick="loginWithGoogle()" class="flex items-center justify-center p-3 bg-white rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors"><span class="text-2xl">G</span></button>
+                        <button onclick="loginWithFacebook()" class="flex items-center justify-center p-3 bg-white rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors"><span class="text-2xl">f</span></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pantalla solicitud -->
+    <section id="pantalla-solicitud" class="hidden min-h-screen eco-gradient px-6 py-8">
+        <div class="w-full max-w-md mx-auto">
+            <div class="eco-card rounded-3xl p-6 shadow-2xl">
+                <div class="flex items-center justify-between mb-6">
+                    <button onclick="showPantalla('principal')" class="p-2 rounded-full bg-green-100 text-green-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                    </button>
+                    <h2 class="text-xl font-bold text-gray-800">♻️ Nueva Solicitud</h2>
+                </div>
+                <form id="formulario-solicitud" class="space-y-5">
+                    <div><input type="text" id="nombre-input" placeholder="👤 Nombre completo" class="w-full p-3 rounded-xl bg-gray-50 border-2 border-green-100 focus:border-green-400 focus:outline-none"></div>
+                    <div><input type="tel" id="telefono-input" placeholder="📱 Teléfono de contacto" class="w-full p-3 rounded-xl bg-gray-50 border-2 border-green-100 focus:border-green-400 focus:outline-none"></div>
+                    <div>
+                        <div class="flex">
+                            <input type="text" id="direccion-input" placeholder="📍 Dirección exacta" class="flex-1 p-3 rounded-l-xl bg-gray-50 border-2 border-green-100 focus:border-green-400 focus:outline-none">
+                            <button type="button" onclick="verEnMapaDireccion()" class="bg-green-500 text-white px-4 rounded-r-xl hover:bg-green-600 transition-colors">🗺️</button>
+                        </div>
+                        <div class="flex mt-1 space-x-1">
+                            <small class="text-gray-500">O</small>
+                            <button type="button" onclick="obtenerUbicacionGPS()" class="text-xs text-green-600 underline hover:text-green-800">Usar mi ubicación actual (GPS)</button>
+                        </div>
+                        <div id="direccion-error" class="hidden text-red-500 text-sm mt-1"></div>
+                    </div>
+                    <div>
+                        <select id="tipo-residuo" required class="w-full p-3 rounded-xl bg-gray-50 border-2 border-green-100 focus:border-green-400 focus:outline-none">
+                            <option value="">🗂️ Tipo de Residuo</option>
+                            <option value="plastico">🥤 Plástico</option>
+                            <option value="papel">📄 Papel y Cartón</option>
+                            <option value="vidrio">🍾 Vidrio</option>
+                            <option value="metal">🔧 Metal</option>
+                            <option value="electronicos">💻 Electrónicos</option>
+                            <option value="organico">🥬 Orgánico</option>
+                            <option value="textil">👕 Textiles</option>
+                        </select>
+                    </div>
+                    <div><input type="number" id="peso-input" placeholder="⚖️ Peso aproximado (kg)" step="0.1" min="0" class="w-full p-3 rounded-xl bg-gray-50 border-2 border-green-100 focus:border-green-400 focus:outline-none"></div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">📸 Foto del material (opcional)</label>
+                        <input type="file" id="imagen-input" accept="image/*" class="w-full p-3 rounded-xl bg-gray-50 border-2 border-green-100 focus:border-green-400 focus:outline-none">
+                    </div>
+                    <button type="button" onclick="enviarSolicitud()" class="w-full btn-primary px-6 py-4 rounded-2xl font-semibold">🚛 Solicitar Recolección</button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pantalla historial/estadísticas -->
+    <section id="pantalla-estadistica" class="hidden min-h-screen eco-gradient px-6 py-8">
+        <div class="w-full max-w-md mx-auto">
+            <div class="eco-card rounded-3xl p-6 shadow-2xl mb-6">
+                <div class="flex items-center justify-between mb-6">
+                    <button onclick="showPantalla('principal')" class="p-2 rounded-full bg-green-100 text-green-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                    </button>
+                    <h2 class="text-xl font-bold text-gray-800">📊 Tu Impacto Verde</h2>
+                    <div class="w-10"></div>
+                </div>
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div class="bg-green-50 p-4 rounded-xl text-center">
+                        <div class="text-2xl font-bold text-green-600" id="total-reciclado">0</div>
+                        <div class="text-sm text-gray-600">kg Reciclados</div>
+                    </div>
+                    <div class="bg-blue-50 p-4 rounded-xl text-center">
+                        <div class="text-2xl font-bold text-blue-600" id="total-solicitudes">0</div>
+                        <div class="text-sm text-gray-600">Solicitudes</div>
+                    </div>
+                </div>
+                <div class="mb-6">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-sm font-medium text-gray-700">Nivel Eco-Warrior</span>
+                        <span class="text-sm text-green-600">Nivel 1</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div class="progress-bar bg-green-500 h-2 rounded-full w-1/3"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="eco-card rounded-3xl p-6 shadow-2xl">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">📋 Historial Reciente</h3>
+                <div id="historial-list" class="space-y-3">
+                    <div class="text-center py-8 text-gray-500">Cargando...</div>
+                </div>
+            </div>
+            <div class="mt-6 text-center">
+                <button onclick="showPantalla('mapa')" class="btn-primary px-8 py-3 rounded-2xl font-semibold">🗺️ Ver Mapa de Recolección</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pantalla mapa -->
+    <section id="pantalla-mapa" class="hidden min-h-screen eco-gradient px-6 py-8">
+        <div class="w-full max-w-md mx-auto">
+            <div class="eco-card rounded-3xl p-6 shadow-2xl">
+                <div class="flex items-center justify-between mb-6">
+                    <button onclick="showPantalla('principal')" class="p-2 rounded-full bg-green-100 text-green-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                    </button>
+                    <h2 class="text-xl font-bold text-gray-800">📍 Mapa de Recolección</h2>
+                    <div class="w-10"></div>
+                </div>
+                <div id="map" style="height: 400px; border-radius: 1rem;" class="mb-4"></div>
+                <div class="bg-green-50 p-4 rounded-xl">
+                    <h3 class="font-semibold text-green-800 mb-2">📍 Punto de Recolección</h3>
+                    <p class="text-green-700 text-sm">Calle 123 # 45-67, Bogotá</p>
+                    <p class="text-green-600 text-xs mt-1">Abierto: Lunes a Viernes 8am-5pm</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Navegación flotante -->
+    <nav class="floating-nav hidden" id="floating-nav">
+        <div class="flex space-x-2">
+            <button onclick="showPantalla('principal')" class="nav-btn p-3 rounded-full hover:bg-green-100 transition-colors active">
+                <svg class="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+            </button>
+            <button onclick="showPantalla('solicitud')" class="nav-btn p-3 rounded-full hover:bg-green-100 transition-colors">
+                <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+            </button>
+            <button onclick="showPantalla('estadistica')" class="nav-btn p-3 rounded-full hover:bg-green-100 transition-colors">
+                <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+            </button>
+            <button onclick="showPantalla('mapa')" class="nav-btn p-3 rounded-full hover:bg-green-100 transition-colors">
+                <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Firebase SDK Modular -->
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
-        import { getFirestore, collection, doc, setDoc, getDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+        import { getAnalytics } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js';
+        import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, GoogleAuthProvider, FacebookAuthProvider, signInWithPopup } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+        import { getFirestore, collection, addDoc, query, where, orderBy, getDocs, doc, setDoc, getDoc, updateDoc, onSnapshot, enableIndexedDbPersistence } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+        import { getStorage, ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js';
 
         // 🔐 Configuración de Firebase
         const firebaseConfig = {
-            apiKey: "AIzaSyCIra7bW5kBj3ynwsAf-H-c97vWgptfnaE",
-            authDomain: "appreciclaje-b7b2a.firebaseapp.com",
-            projectId: "appreciclaje-b7b2a",
-            storageBucket: "appreciclaje-b7b2a.appspot.com",
-            messagingSenderId: "675875410563",
-            appId: "1:675875410563:web:18254ae4f8d9c8e9f3c123"
+            apiKey: "AIzaSyA2t_5x6x4fi0t4efDjk9OG0Gh1g95U6c0",
+            authDomain: "appreciclaje-nuevo.firebaseapp.com",
+            projectId: "appreciclaje-nuevo",
+            storageBucket: "appreciclaje-nuevo.firebasestorage.app",
+            messagingSenderId: "1004737179039",
+            appId: "1:1004737179039:web:523003623daaced71c61aa"
         };
 
         // Inicializar Firebase
         const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
         const auth = getAuth(app);
         const db = getFirestore(app);
+        const storage = getStorage(app);
+
+        // ✅ Habilitar persistencia local (modo offline)
+        enableIndexedDbPersistence(db).catch(err => {
+            if (err.code === 'failed-precondition') {
+                console.warn('Múltiples pestañas abiertas. Persistencia no activada.');
+            } else if (err.code === 'unimplemented') {
+                console.warn('Persistencia no soportada en este navegador.');
+            }
+        });
+
+        // Proveedores de autenticación
         const googleProvider = new GoogleAuthProvider();
+        const facebookProvider = new FacebookAuthProvider();
 
-        // Variables globales
-        let currentUser = null;
-        let userRole = null;
+        // Exportar funciones globales
+        window.auth = auth;
+        window.db = db;
+        window.storage = storage;
+        window.doc = doc;
+        window.setDoc = setDoc;
+        window.getDoc = getDoc;
+        window.updateDoc = updateDoc;
+        window.collection = collection;
+        window.addDoc = addDoc;
+        window.query = query;
+        window.where = where;
+        window.orderBy = orderBy;
+        window.getDocs = getDocs;
+        window.onSnapshot = onSnapshot;
+        window.ref = ref;
+        window.uploadBytes = uploadBytes;
+        window.getDownloadURL = getDownloadURL;
+        window.signInWithEmailAndPassword = signInWithEmailAndPassword;
+        window.createUserWithEmailAndPassword = createUserWithEmailAndPassword;
+        window.signOut = signOut;
+        window.signInWithPopup = signInWithPopup;
+        window.googleProvider = googleProvider;
+        window.facebookProvider = facebookProvider;
 
-        // Elementos del DOM
-        const loadingScreen = document.getElementById('loading-screen');
-        const authScreen = document.getElementById('auth-screen');
-        const appContainer = document.getElementById('app-container');
-
-        // === FUNCIONES ===
-
-        // Validar email
-        function validateEmail(email) {
-            const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            return re.test(email);
-        }
-
-        // Manejo de errores de Firebase
-        function getFirebaseErrorMessage(errorCode) {
-            const messages = {
-                'auth/network-request-failed': 'Sin conexión a internet. Verifica tu red.',
-                'auth/invalid-credential': 'Email o contraseña incorrectos.',
-                'auth/user-disabled': 'Esta cuenta está deshabilitada.',
-                'auth/too-many-requests': 'Demasiados intentos. Espera un momento.',
-                'auth/invalid-email': 'Formato de email inválido.',
-                'auth/weak-password': 'La contraseña debe tener al menos 6 caracteres.',
-                'auth/email-already-in-use': 'Este email ya está registrado.',
-                'auth/user-not-found': 'No se encontró una cuenta con ese email.',
-                'auth/wrong-password': 'Contraseña incorrecta.',
-                'auth/popup-blocked': 'Ventana emergente bloqueada. Permite popups.',
-                'auth/popup-closed-by-user': 'Inicio de sesión cancelado.',
-                'auth/cancelled-popup-request': 'Operación cancelada. Intenta de nuevo.'
-            };
-            return messages[errorCode] || 'Error desconocido. Intenta más tarde.';
-        }
-
-        // Mostrar notificación
-        function showNotification(message, type = 'info') {
-            const notification = document.createElement('div');
-            notification.className = `fixed top-4 right-4 z-50 px-6 py-3 rounded-lg shadow-lg text-white font-medium transform transition-transform duration-300 translate-x-full max-w-xs`;
-            
-            const colors = {
-                success: 'bg-green-500',
-                error: 'bg-red-500',
-                warning: 'bg-yellow-500',
-                info: 'bg-blue-500'
-            };
-            notification.classList.add(colors[type] || colors.info);
-            notification.textContent = message;
-
-            document.body.appendChild(notification);
-            setTimeout(() => notification.classList.remove('translate-x-full'), 100);
-            setTimeout(() => {
-                notification.classList.add('translate-x-full');
-                setTimeout(() => {
-                    if (notification.parentNode) notification.remove();
-                }, 300);
-            }, 3000);
-        }
-
-        // Mostrar pantalla de autenticación
-        function showAuthScreen() {
-            authScreen.classList.remove('hidden');
-            appContainer.classList.add('hidden');
-        }
-
-        // Mostrar app principal
-        function showMainApp() {
-            authScreen.classList.add('hidden');
-            appContainer.classList.remove('hidden');
-        }
-
-        // Cargar datos del usuario
-        async function loadUserData(user) {
-            try {
-                const userDocRef = doc(db, 'usuarios', user.uid);
-                const userDoc = await getDoc(userDocRef);
-                
-                if (userDoc.exists()) {
-                    const userData = userDoc.data();
-                    userRole = userData.rol;
-                    document.getElementById('user-name').textContent = userData.nombre || 'Usuario';
-                } else {
-                    // Si no existe, crear perfil básico
-                    await setDoc(userDocRef, {
-                        nombre: user.displayName || user.email.split('@')[0],
-                        email: user.email,
-                        rol: 'usuario',
-                        organizacion: '',
-                        fechaRegistro: new Date(),
-                        activo: true
-                    });
-                    userRole = 'usuario';
-                    document.getElementById('user-name').textContent = user.displayName || 'Usuario';
-                }
-            } catch (error) {
-                console.error('Error al cargar datos del usuario:', error);
-                showNotification('No se pudo cargar tu perfil. Usa modo offline.', 'warning');
-                userRole = 'usuario'; // Rol por defecto
-                document.getElementById('user-name').textContent = user.displayName || 'Usuario';
-            }
-        }
-
-        // === EVENTOS DE AUTENTICACIÓN ===
-
-        // Estado de autenticación
-        auth.onAuthStateChanged(async (user) => {
-            if (user) {
-                currentUser = user;
-                await loadUserData(user);
-                showMainApp();
-            } else {
-                currentUser = null;
-                userRole = null;
-                showAuthScreen();
-            }
-            // Ocultar loading después de definir estado
-            setTimeout(() => loadingScreen.classList.add('hidden'), 500);
-        });
-
-        // Login con email
-        document.getElementById('login-form')?.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const email = document.getElementById('email-login').value.trim();
-            const password = document.getElementById('password-login').value.trim();
-
-            if (!email || !password) return showNotification('Completa todos los campos', 'error');
-            if (!validateEmail(email)) return showNotification('Email inválido', 'error');
-
-            try {
-                await signInWithEmailAndPassword(auth, email, password);
-                showNotification('¡Bienvenido de vuelta!', 'success');
-            } catch (error) {
-                const msg = getFirebaseErrorMessage(error.code);
-                showNotification(`Error: ${msg}`, 'error');
-            }
-        });
-
-        // Registro
-        document.getElementById('signup-form')?.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const nombre = document.getElementById('nombre-register').value.trim();
-            const email = document.getElementById('email-register').value.trim();
-            const password = document.getElementById('password-register').value.trim();
-            const rol = document.getElementById('rol-register').value;
-            const organizacion = document.getElementById('organizacion-register').value.trim();
-
-            if (!nombre || !email || !password || !rol) return showNotification('Completa todos los campos', 'error');
-            if (!validateEmail(email)) return showNotification('Email inválido', 'error');
-            if (password.length < 6) return showNotification('La contraseña debe tener al menos 6 caracteres', 'error');
-
-            try {
-                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-                const user = userCredential.user;
-
-                await setDoc(doc(db, 'usuarios', user.uid), {
-                    nombre,
-                    email,
-                    rol,
-                    organizacion: rol === 'reciclador' ? organizacion : '',
-                    fechaRegistro: new Date(),
-                    activo: true
-                });
-
-                showNotification('¡Registro exitoso! Bienvenido 🌱', 'success');
-                document.getElementById('signup-form').reset();
-            } catch (error) {
-                const msg = getFirebaseErrorMessage(error.code);
-                showNotification(`Error: ${msg}`, 'error');
-            }
-        });
-
-        // Login con Google
-        document.getElementById('login-google')?.addEventListener('click', async () => {
-            try {
-                const result = await signInWithPopup(auth, googleProvider);
-                const user = result.user;
-                showNotification('¡Inicio de sesión con Google exitoso!', 'success');
-            } catch (error) {
-                const msg = getFirebaseErrorMessage(error.code);
-                showNotification(`Google: ${msg}`, 'error');
-            }
-        });
-
-        // Alternar entre login y registro
-        document.getElementById('show-register')?.addEventListener('click', (e) => {
-            e.preventDefault();
-            document.getElementById('login-form')?.classList.add('hidden');
-            document.getElementById('register-form')?.classList.remove('hidden');
-        });
-
-        document.getElementById('show-login')?.addEventListener('click', (e) => {
-            e.preventDefault();
-            document.getElementById('register-form')?.classList.add('hidden');
-            document.getElementById('login-form')?.classList.remove('hidden');
-        });
-
-        // Mostrar campo de organización solo para recicladores
-        document.getElementById('rol-register')?.addEventListener('change', (e) => {
-            const orgField = document.getElementById('organizacion-field');
-            if (e.target.value === 'reciclador') {
-                orgField.classList.remove('hidden');
-                document.getElementById('organizacion-register').required = true;
-            } else {
-                orgField.classList.add('hidden');
-                document.getElementById('organizacion-register').required = false;
-            }
-        });
-
-        // Cerrar sesión
-        document.getElementById('logout-btn')?.addEventListener('click', async () => {
-            try {
-                await signOut(auth);
-                showNotification('Sesión cerrada', 'info');
-            } catch (error) {
-                showNotification('Error al cerrar sesión', 'error');
-            }
-        });
-
-        // Inicialización
+        // Inicializar app
         document.addEventListener('DOMContentLoaded', () => {
-            // El estado de autenticación se maneja con onAuthStateChanged
+            showPantalla('principal');
         });
     </script>
 
-    <style>
-        .fade-in { animation: fadeIn 0.3s ease-in; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .slide-up { animation: slideUp 0.3s ease-out; }
-        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-        .pulse-green { animation: pulse 2s infinite; background-color: #10b981; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
-        #map-usuario, #map-reciclador, #mapa-ruta, #mapa-seguimiento { height: 300px; width: 100%; border-radius: 12px; }
-        .floating-btn { position: fixed; bottom: 20px; right: 20px; z-index: 1000; }
-        .modal-overlay { backdrop-filter: blur(4px); }
-    </style>
-</head>
-<body class="bg-gray-50 font-sans">
-    <!-- Pantalla de carga -->
-    <div id="loading-screen" class="fixed inset-0 bg-green-600 flex items-center justify-center z-50">
-        <div class="text-center text-white">
-            <i class="fas fa-recycle text-6xl mb-4 animate-spin"></i>
-            <h1 class="text-3xl font-bold mb-2">ReciclApp</h1>
-            <p class="text-green-200">Conectando el mundo del reciclaje...</p>
-        </div>
-    </div>
+    <!-- Código principal de la app -->
+    <script>
+        let currentUser = null;
+        let mapaLeaflet = null;
+        let marcadorActual = null;
+        let marcadorUsuarioGPS = null;
+        let seguimientoUnsubscribe = null;
 
-    <!-- Pantalla de autenticación -->
-    <div id="auth-screen" class="hidden min-h-screen bg-gradient-to-b from-green-600 to-green-800 p-6">
-        <div class="max-w-md mx-auto">
-            <div class="text-center text-white mb-12 pt-20">
-                <i class="fas fa-recycle text-6xl mb-4"></i>
-                <h1 class="text-4xl font-bold mb-2">ReciclApp</h1>
-                <p class="text-green-200">Tu plataforma de reciclaje inteligente</p>
-            </div>
+        // Ubicaciones
+        let ubicacionReciclaje = { lat: 4.6097, lng: -74.0817, label: "Punto de Recolección Principal" };
+        let ubicacionUsuario = { lat: null, lng: null, label: "Tu Ubicación (GPS)" };
 
-            <!-- Formulario de login -->
-            <form id="login-form" class="bg-white rounded-2xl p-6 shadow-xl fade-in">
-                <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Iniciar Sesión</h2>
-                <div class="space-y-4">
-                    <div>
-                        <label class="block text-gray-700 text-sm font-semibold mb-2">Email</label>
-                        <input type="email" id="email-login" required 
-                               class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                    </div>
-                    <div>
-                        <label class="block text-gray-700 text-sm font-semibold mb-2">Contraseña</label>
-                        <input type="password" id="password-login" required 
-                               class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                    </div>
-                    <button type="submit" 
-                            class="w-full bg-green-600 text-white py-3 rounded-xl font-semibold hover:bg-green-700 transition-colors">
-                        Iniciar Sesión
-                    </button>
-                </div>
-                <div class="my-6 text-center">
-                    <span class="text-gray-500">o</span>
-                    <hr class="border-gray-300 my-2">
-                </div>
-                <button type="button" id="login-google" 
-                        class="w-full bg-red-500 text-white py-3 rounded-xl font-semibold hover:bg-red-600 transition-colors flex items-center justify-center">
-                    <i class="fab fa-google mr-2"></i>
-                    Continuar con Google
-                </button>
-                <div class="mt-6 text-center">
-                    <button id="show-register" class="text-green-600 font-semibold hover:underline">
-                        ¿No tienes cuenta? Regístrate
-                    </button>
-                </div>
-            </form>
+        // Funciones principales
+        function showPantalla(nombre) {
+            document.querySelectorAll('section[id^="pantalla-"]').forEach(s => s.classList.add('hidden'));
+            const pantalla = document.getElementById(`pantalla-${nombre}`);
+            if (pantalla) pantalla.classList.remove('hidden');
 
-            <!-- Formulario de registro -->
-            <form id="signup-form" class="hidden bg-white rounded-2xl p-6 shadow-xl fade-in">
-                <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Crear Cuenta</h2>
-                <div class="space-y-4">
-                    <div>
-                        <label class="block text-gray-700 text-sm font-semibold mb-2">Nombre completo</label>
-                        <input type="text" id="nombre-register" required 
-                               class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                    </div>
-                    <div>
-                        <label class="block text-gray-700 text-sm font-semibold mb-2">Email</label>
-                        <input type="email" id="email-register" required 
-                               class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                    </div>
-                    <div>
-                        <label class="block text-gray-700 text-sm font-semibold mb-2">Contraseña</label>
-                        <input type="password" id="password-register" required 
-                               class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                    </div>
-                    <div>
-                        <label class="block text-gray-700 text-sm font-semibold mb-2">Tipo de usuario</label>
-                        <select id="rol-register" required 
-                                class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                            <option value="">Seleccionar...</option>
-                            <option value="usuario">Usuario (Ciudadano)</option>
-                            <option value="reciclador">Reciclador</option>
-                        </select>
-                    </div>
-                    <div id="organizacion-field" class="hidden">
-                        <label class="block text-gray-700 text-sm font-semibold mb-2">Organización (opcional)</label>
-                        <input type="text" id="organizacion-register" 
-                               class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                    </div>
-                    <button type="submit" 
-                            class="w-full bg-green-600 text-white py-3 rounded-xl font-semibold hover:bg-green-700 transition-colors">
-                        Registrarse
-                    </button>
-                </div>
-                <div class="mt-6 text-center">
-                    <button id="show-login" class="text-green-600 font-semibold hover:underline">
-                        ¿Ya tienes cuenta? Iniciar sesión
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
+            const nav = document.getElementById('floating-nav');
+            if (['principal', 'registro'].includes(nombre)) {
+                nav?.classList.add('hidden');
+            } else {
+                nav?.classList.remove('hidden');
+            }
 
-    <!-- App principal (oculta por defecto) -->
-    <div id="app-container" class="hidden">
-        <header class="bg-white shadow-sm sticky top-0 z-40">
-            <div class="px-4 py-3 flex items-center justify-between">
-                <div class="flex items-center">
-                    <i class="fas fa-recycle text-green-600 text-2xl mr-2"></i>
-                    <h1 class="text-xl font-bold text-gray-800">ReciclApp</h1>
-                </div>
-                <div class="flex items-center space-x-3">
-                    <span id="user-name" class="text-gray-700 text-sm">Cargando...</span>
-                    <button id="logout-btn" class="text-gray-500 hover:text-red-500 transition-colors">
-                        <i class="fas fa-sign-out-alt"></i>
-                    </button>
-                </div>
-            </div>
-        </header>
+            if (nombre === 'estadistica' && currentUser) cargarDatosUsuario();
+            if (nombre === 'mapa') setTimeout(inicializarMapa, 200);
+        }
 
-        <!-- Aquí va el resto de tu app: mapas, solicitudes, estadísticas, etc. -->
-        <main class="p-6">
-            <div class="bg-white rounded-2xl p-6 shadow">
-                <h2 class="text-xl font-bold text-gray-800 mb-4">¡Bienvenido a ReciclApp!</h2>
-                <p class="text-gray-600">Tu impacto verde comienza aquí. 🌍</p>
-            </div>
-        </main>
-    </div>
+        function showNotification(message, type = 'info') {
+            const colors = { success: 'bg-green-500', error: 'bg-red-500', info: 'bg-blue-500', warning: 'bg-yellow-500' };
+            const notification = document.createElement('div');
+            notification.className = `notification ${colors[type]} text-white px-6 py-3 rounded-2xl shadow-lg`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            setTimeout(() => notification.classList.remove('translate-x-full'), 100);
+            setTimeout(() => {
+                if (notification.parentNode) notification.remove();
+            }, 4000);
+        }
+
+        function showAuthStatus(show, message = '') {
+            const el = document.getElementById('auth-status');
+            const text = document.getElementById('auth-status-text');
+            if (show && el && text) {
+                text.textContent = message;
+                el.classList.remove('hidden');
+            } else if (el) {
+                el.classList.add('hidden');
+            }
+        }
+
+        function getFirebaseErrorMessage(code) {
+            const messages = {
+                'auth/user-not-found': 'Usuario no encontrado. ¿Has creado una cuenta?',
+                'auth/wrong-password': 'Contraseña incorrecta',
+                'auth/email-already-in-use': 'Este email ya está registrado',
+                'auth/weak-password': 'La contraseña debe tener al menos 6 caracteres',
+                'auth/invalid-email': 'Email inválido',
+                'auth/network-request-failed': 'Error de conexión. Verifica tu internet',
+                'auth/popup-closed-by-user': 'Inicio de sesión cancelado',
+                'auth/too-many-requests': 'Demasiados intentos. Espera un momento',
+                'unavailable': 'Sin conexión a Firestore. Modo offline activado.'
+            };
+            return messages[code] || 'Error: ' + code;
+        }
+
+        // Autenticación
+        async function loginUser() {
+            const email = document.getElementById('email-input')?.value;
+            const password = document.getElementById('password-input')?.value;
+            if (!email || !password) return showNotification('Completa todos los campos', 'error');
+
+            showAuthStatus(true, 'Iniciando sesión...');
+            try {
+                const userCred = await window.signInWithEmailAndPassword(window.auth, email, password);
+                currentUser = userCred.user;
+                showNotification('¡Bienvenido!', 'success');
+                showPantalla('solicitud');
+                await cargarDatosUsuario();
+            } catch (error) {
+                const msg = getFirebaseErrorMessage(error.code);
+                showNotification(msg, 'error');
+            } finally {
+                showAuthStatus(false);
+            }
+        }
+
+        async function registerUser() {
+            const email = document.getElementById('email-input')?.value;
+            const password = document.getElementById('password-input')?.value;
+            if (!email || !password) return showNotification('Completa todos los campos', 'error');
+            if (password.length < 6) return showNotification('La contraseña debe tener al menos 6 caracteres', 'error');
+
+            showAuthStatus(true, 'Creando cuenta...');
+            try {
+                const userCred = await window.createUserWithEmailAndPassword(window.auth, email, password);
+                currentUser = userCred.user;
+                await createUserProfile(currentUser);
+                showNotification('¡Cuenta creada!', 'success');
+                showPantalla('solicitud');
+                await cargarDatosUsuario();
+            } catch (error) {
+                const msg = getFirebaseErrorMessage(error.code);
+                showNotification(msg, 'error');
+            } finally {
+                showAuthStatus(false);
+            }
+        }
+
+        async function loginWithGoogle() {
+            try {
+                const result = await window.signInWithPopup(window.auth, window.googleProvider);
+                currentUser = result.user;
+                await createUserProfile(currentUser);
+                showNotification('¡Bienvenido!', 'success');
+                showPantalla('solicitud');
+                await cargarDatosUsuario();
+            } catch (error) {
+                if (error.code !== 'auth/popup-closed-by-user') {
+                    showNotification(getFirebaseErrorMessage(error.code), 'error');
+                }
+            }
+        }
+
+        async function loginWithFacebook() {
+            try {
+                const result = await window.signInWithPopup(window.auth, window.facebookProvider);
+                currentUser = result.user;
+                await createUserProfile(currentUser);
+                showNotification('¡Bienvenido!', 'success');
+                showPantalla('solicitud');
+                await cargarDatosUsuario();
+            } catch (error) {
+                if (error.code !== 'auth/popup-closed-by-user') {
+                    showNotification(getFirebaseErrorMessage(error.code), 'error');
+                }
+            }
+        }
+
+        async function createUserProfile(user) {
+            if (!user || !user.uid) return;
+            const userRef = doc(window.db, 'usuarios', user.uid);
+            try {
+                await setDoc(userRef, {
+                    uid: user.uid,
+                    email: user.email,
+                    displayName: user.displayName || 'Usuario Eco',
+                    photoURL: user.photoURL || null,
+                    fechaRegistro: new Date(),
+                    totalReciclado: 0,
+                    totalSolicitudes: 0,
+                    nivel: 1
+                }, { merge: true });
+            } catch (error) {
+                console.error('Error creando perfil:', error);
+            }
+        }
+
+        // Datos del usuario (modo offline + en tiempo real)
+        async function cargarDatosUsuario() {
+            if (!currentUser) return;
+
+            const userRef = doc(window.db, 'usuarios', currentUser.uid);
+            onSnapshot(userRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    document.getElementById('total-reciclado').textContent = data.totalReciclado || 0;
+                    document.getElementById('total-solicitudes').textContent = data.totalSolicitudes || 0;
+                    actualizarBarraProgreso(data.totalReciclado || 0);
+                } else {
+                    createUserProfile(currentUser);
+                }
+            }, (error) => {
+                console.error('Error en tiempo real:', error);
+                showNotification('Error sincronizando datos. Modo offline.', 'warning');
+            });
+
+            await cargarHistorialSolicitudes();
+        }
+
+        async function cargarHistorialSolicitudes() {
+            if (!currentUser) return;
+            const q = query(collection(window.db, 'solicitudes'), where('userId', '==', currentUser.uid), orderBy('fecha', 'desc'));
+            onSnapshot(q, (snapshot) => {
+                const list = document.getElementById('historial-list');
+                if (!list) return;
+                list.innerHTML = '';
+                if (snapshot.empty) {
+                    list.innerHTML = '<div class="text-center py-8 text-gray-500">No tienes solicitudes aún</div>';
+                    return;
+                }
+                snapshot.forEach(doc => {
+                    const s = doc.data();
+                    const date = s.fecha?.toDate?.()?.toLocaleDateString('es-ES') || 'N/A';
+                    const estado = { pendiente: 'bg-yellow-100 text-yellow-600', completado: 'bg-green-100 text-green-600' }[s.estado] || 'bg-gray-100 text-gray-600';
+                    list.innerHTML += `
+                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                            <div><div class="font-medium">${s.tipoResiduo}</div><div class="text-sm">${s.peso}kg • ${date}</div></div>
+                            <span class="${estado} px-3 py-1 rounded-full text-sm">Completado</span>
+                        </div>`;
+                });
+            });
+        }
+
+        // Geolocalización
+        function obtenerUbicacionGPS() {
+            if (!navigator.geolocation) return showNotification('Geolocalización no soportada', 'error');
+
+            showAuthStatus(true, 'Obteniendo ubicación...');
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    ubicacionUsuario.lat = pos.coords.latitude;
+                    ubicacionUsuario.lng = pos.coords.longitude;
+                    document.getElementById('direccion-input').value = `${pos.coords.latitude.toFixed(6)}, ${pos.coords.longitude.toFixed(6)}`;
+                    showNotification('Ubicación obtenida', 'success');
+                    showAuthStatus(false);
+                    if (mapaLeaflet) mostrarEnMapa(pos.coords.latitude, pos.coords.longitude, 'Tu ubicación');
+                },
+                (err) => {
+                    showAuthStatus(false);
+                    showNotification('Error de ubicación: ' + err.message, 'error');
+                },
+                { enableHighAccuracy: true, timeout: 10000 }
+            );
+        }
+
+        // Envío de solicitud
+        async function enviarSolicitud() {
+            if (!currentUser) return showNotification('Inicia sesión primero', 'warning');
+
+            const nombre = document.getElementById('nombre-input')?.value;
+            const telefono = document.getElementById('telefono-input')?.value;
+            const direccion = document.getElementById('direccion-input')?.value;
+            const tipoResiduo = document.getElementById('tipo-residuo')?.value;
+            const peso = document.getElementById('peso-input')?.value || 0;
+            const imagen = document.getElementById('imagen-input')?.files[0];
+
+            if (!nombre || !telefono || !direccion || !tipoResiduo) return showNotification('Completa los campos obligatorios', 'error');
+
+            try {
+                let imagenUrl = null;
+                if (imagen) {
+                    const imgRef = ref(window.storage, `solicitudes/${Date.now()}_${imagen.name}`);
+                    const snap = await uploadBytes(imgRef, imagen);
+                    imagenUrl = await getDownloadURL(snap.ref);
+                }
+
+                const ubicacion = ubicacionUsuario.lat && ubicacionUsuario.lng
+                    ? { lat: ubicacionUsuario.lat, lng: ubicacionUsuario.lng }
+                    : { lat: ubicacionReciclaje.lat, lng: ubicacionReciclaje.lng };
+
+                await addDoc(collection(window.db, 'solicitudes'), {
+                    nombre, telefono, direccion, tipoResiduo, peso, imagenUrl, ubicacion,
+                    fecha: new Date(), estado: 'pendiente', userId: currentUser.uid
+                });
+
+                await actualizarEstadisticasUsuario(parseFloat(peso) || 0);
+                showNotification('¡Solicitud enviada!', 'success');
+                document.getElementById('formulario-solicitud').reset();
+                ubicacionUsuario = { lat: null, lng: null, label: "Tu Ubicación (GPS)" };
+            } catch (error) {
+                console.error('Error:', error);
+                showNotification('Error al enviar. Verifica tu conexión.', 'error');
+            }
+        }
+
+        async function actualizarEstadisticasUsuario(peso) {
+            if (!currentUser) return;
+            const ref = doc(window.db, 'usuarios', currentUser.uid);
+            const snap = await getDoc(ref);
+            if (snap.exists()) {
+                const data = snap.data();
+                await updateDoc(ref, {
+                    totalReciclado: (data.totalReciclado || 0) + peso,
+                    totalSolicitudes: (data.totalSolicitudes || 0) + 1
+                });
+            }
+        }
+
+        // Mapa
+        function inicializarMapa() {
+            if (mapaLeaflet) return;
+
+            mapaLeaflet = L.map('map').setView([ubicacionReciclaje.lat, ubicacionReciclaje.lng], 13);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap'
+            }).addTo(mapaLeaflet);
+
+            L.marker([ubicacionReciclaje.lat, ubicacionReciclaje.lng])
+                .addTo(mapaLeaflet)
+                .bindPopup(ubicacionReciclaje.label);
+
+            iniciarSeguimientoRecicladores();
+        }
+
+        function iniciarSeguimientoRecicladores() {
+            const q = collection(window.db, 'recicladores');
+            seguimientoUnsubscribe = onSnapshot(q, (snapshot) => {
+                snapshot.docChanges().forEach((change) => {
+                    const data = change.doc.data();
+                    if (data.ubicacion?.lat && data.ubicacion?.lng) {
+                        actualizarMarcadorReciclador(change.doc.id, data);
+                    }
+                });
+            });
+        }
+
+        function actualizarMarcadorReciclador(id, data) {
+            const latlng = [data.ubicacion.lat, data.ubicacion.lng];
+            if (window.marcadoresRecicladores?.[id]) {
+                window.marcadoresRecicladores[id].setLatLng(latlng);
+            } else {
+                const marker = L.marker(latlng).addTo(mapaLeaflet);
+                marker.bindPopup(data.nombre || 'Reciclador');
+                window.marcadoresRecicladores = window.marcadoresRecicladores || {};
+                window.marcadoresRecicladores[id] = marker;
+            }
+        }
+
+        function mostrarEnMapa(lat, lng, label) {
+            if (!mapaLeaflet) inicializarMapa();
+            mapaLeaflet.setView([lat, lng], 15);
+            if (marcadorActual) {
+                marcadorActual.setLatLng([lat, lng]).setPopupContent(label);
+            } else {
+                marcadorActual = L.marker([lat, lng]).addTo(mapaLeaflet).bindPopup(label);
+            }
+            marcadorActual.openPopup();
+        }
+
+        // Geocodificación
+        async function geocodificarDireccion(dir) {
+            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(dir)}, Bogotá, Colombia`);
+            const data = await res.json();
+            if (data.length > 0) return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+            throw new Error('Dirección no encontrada');
+        }
+
+        async function verEnMapaDireccion() {
+            const input = document.getElementById('direccion-input');
+            const error = document.getElementById('direccion-error');
+            const dir = input.value;
+            if (!dir) return error.textContent = 'Ingresa una dirección', error.classList.remove('hidden');
+
+            error.classList.add('hidden');
+            try {
+                const coords = await geocodificarDireccion(dir);
+                ubicacionReciclaje.lat = coords.lat;
+                ubicacionReciclaje.lng = coords.lng;
+                ubicacionReciclaje.label = dir;
+                showPantalla('mapa');
+            } catch (e) {
+                error.textContent = 'Dirección no encontrada. Sé más específico.';
+                error.classList.remove('hidden');
+            }
+        }
+
+        // Inicialización
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('formulario-solicitud');
+            if (form) form.addEventListener('submit', (e) => e.preventDefault());
+
+            window.auth.onAuthStateChanged((user) => {
+                currentUser = user;
+                if (user) console.log('Usuario autenticado:', user.email);
+            });
+        });
+
+        window.addEventListener('beforeunload', () => {
+            if (seguimientoUnsubscribe) seguimientoUnsubscribe();
+        });
+    </script>
 </body>
 </html>
