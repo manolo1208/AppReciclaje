@@ -6,12 +6,10 @@
     <title>ReciclApp - Reciclaje Inteligente</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
-    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-messaging-compat.js"></script>
     <style>
         .fade-in { animation: fadeIn 0.3s ease-in; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -33,6 +31,7 @@
             <p class="text-green-200">Conectando el mundo del reciclaje...</p>
         </div>
     </div>
+    
     <!-- Authentication Screen -->
     <div id="auth-screen" class="hidden min-h-screen bg-gradient-to-b from-green-600 to-green-800 p-6">
         <div class="max-w-md mx-auto">
@@ -41,6 +40,7 @@
                 <h1 class="text-4xl font-bold mb-2">ReciclApp</h1>
                 <p class="text-green-200">Tu plataforma de reciclaje inteligente</p>
             </div>
+            
             <!-- Login Form -->
             <div class="bg-white rounded-2xl p-6 shadow-xl fade-in">
                 <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Iniciar Sesión</h2>
@@ -75,6 +75,7 @@
                     </button>
                 </div>
             </div>
+            
             <!-- Register Form -->
             <div id="register-form" class="hidden bg-white rounded-2xl p-6 shadow-xl fade-in">
                 <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Registro</h2>
@@ -121,6 +122,7 @@
             </div>
         </div>
     </div>
+    
     <!-- Main App Container -->
     <div id="app-container" class="hidden">
         <!-- Header -->
@@ -138,343 +140,10 @@
                 </div>
             </div>
         </header>
-        <!-- Usuario Module -->
-        <div id="usuario-module" class="hidden">
-            <!-- Home Screen Usuario -->
-            <div id="usuario-home" class="p-4 space-y-6">
-                <div class="bg-gradient-to-r from-green-500 to-green-600 rounded-2xl p-6 text-white">
-                    <h2 class="text-2xl font-bold mb-2">¡Hola, ciudadano responsable!</h2>
-                    <p class="text-green-100">Solicita la recolección de tus residuos reciclables</p>
-                </div>
-                <!-- Quick Actions -->
-                <div class="grid grid-cols-2 gap-4">
-                    <button id="nueva-solicitud-btn" 
-                            class="bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow text-center">
-                        <i class="fas fa-plus-circle text-green-600 text-3xl mb-2"></i>
-                        <p class="font-semibold text-gray-800">Nueva Solicitud</p>
-                    </button>
-                    <button id="historial-usuario-btn" 
-                            class="bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow text-center">
-                        <i class="fas fa-history text-blue-600 text-3xl mb-2"></i>
-                        <p class="font-semibold text-gray-800">Mi Historial</p>
-                    </button>
-                </div>
-                <!-- Solicitudes Activas -->
-                <div class="bg-white rounded-2xl p-6 shadow-sm">
-                    <h3 class="text-lg font-bold text-gray-800 mb-4">Solicitudes Activas</h3>
-                    <div id="solicitudes-activas" class="space-y-3">
-                        <!-- Solicitudes activas se cargarán aquí -->
-                    </div>
-                </div>
-            </div>
-            <!-- Nueva Solicitud Screen -->
-            <div id="nueva-solicitud" class="hidden p-4">
-                <div class="bg-white rounded-2xl p-6 shadow-sm">
-                    <div class="flex items-center mb-6">
-                        <button id="back-to-home" class="text-gray-500 hover:text-gray-700 mr-3">
-                            <i class="fas fa-arrow-left text-xl"></i>
-                        </button>
-                        <h2 class="text-2xl font-bold text-gray-800">Nueva Solicitud</h2>
-                    </div>
-                    <form id="formSolicitud" class="space-y-6">
-                        <!-- Tipo de Residuo -->
-                        <div>
-                            <label class="block text-gray-700 text-sm font-semibold mb-3">Tipo de Residuo</label>
-                            <div class="grid grid-cols-2 gap-3">
-                                <label class="flex items-center p-3 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-green-500 transition-colors">
-                                    <input type="radio" name="tipoResiduo" value="PET" class="mr-3 text-green-600">
-                                    <div>
-                                        <i class="fas fa-bottle-water text-blue-500 mr-2"></i>
-                                        <span class="font-medium">PET</span>
-                                    </div>
-                                </label>
-                                <label class="flex items-center p-3 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-green-500 transition-colors">
-                                    <input type="radio" name="tipoResiduo" value="Cartón" class="mr-3 text-green-600">
-                                    <div>
-                                        <i class="fas fa-box text-orange-500 mr-2"></i>
-                                        <span class="font-medium">Cartón</span>
-                                    </div>
-                                </label>
-                                <label class="flex items-center p-3 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-green-500 transition-colors">
-                                    <input type="radio" name="tipoResiduo" value="Plástico" class="mr-3 text-green-600">
-                                    <div>
-                                        <i class="fas fa-recycle text-green-500 mr-2"></i>
-                                        <span class="font-medium">Plástico</span>
-                                    </div>
-                                </label>
-                                <label class="flex items-center p-3 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-green-500 transition-colors">
-                                    <input type="radio" name="tipoResiduo" value="Papel" class="mr-3 text-green-600">
-                                    <div>
-                                        <i class="fas fa-file-alt text-gray-500 mr-2"></i>
-                                        <span class="font-medium">Papel</span>
-                                    </div>
-                                </label>
-                            </div>
-                        </div>
-                        <!-- Cantidad -->
-                        <div>
-                            <label class="block text-gray-700 text-sm font-semibold mb-2">Cantidad Estimada</label>
-                            <div class="flex space-x-3">
-                                <input type="number" id="cantidad-peso" placeholder="Peso (kg)" 
-                                       class="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                                <input type="number" id="cantidad-bolsas" placeholder="Bolsas" 
-                                       class="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                            </div>
-                        </div>
-                        <!-- Foto del Residuo -->
-                        <div>
-                            <label class="block text-gray-700 text-sm font-semibold mb-2">Foto del Residuo (Opcional)</label>
-                            <div class="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center">
-                                <input type="file" id="fotoResiduo" accept="image/*" class="hidden">
-                                <button type="button" id="foto-btn" class="text-gray-500 hover:text-green-600 transition-colors">
-                                    <i class="fas fa-camera text-3xl mb-2"></i>
-                                    <p>Tomar foto o seleccionar imagen</p>
-                                </button>
-                                <div id="foto-preview" class="hidden mt-4">
-                                    <img id="preview-img" class="max-w-full h-32 object-cover rounded-lg mx-auto">
-                                </div>
-                            </div>
-                        </div>
-                        <!-- Mapa de Ubicación -->
-                        <div>
-                            <label class="block text-gray-700 text-sm font-semibold mb-2">Ubicación de Recolección</label>
-                            <div id="map-usuario" class="border border-gray-300 rounded-xl"></div>
-                            <p class="text-sm text-gray-500 mt-2">Toca en el mapa para seleccionar la ubicación exacta</p>
-                        </div>
-                        <!-- Tipo de Recolección -->
-                        <div>
-                            <label class="block text-gray-700 text-sm font-semibold mb-3">Tipo de Recolección</label>
-                            <div class="space-y-3">
-                                <label class="flex items-center p-4 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-green-500 transition-colors">
-                                    <input type="radio" name="tipoRecoleccion" value="inmediata" class="mr-3 text-green-600">
-                                    <div class="flex-1">
-                                        <div class="flex items-center">
-                                            <i class="fas fa-bolt text-yellow-500 mr-2"></i>
-                                            <span class="font-medium">Recolección Inmediata</span>
-                                        </div>
-                                        <p class="text-sm text-gray-500 mt-1">En los próximos 30 minutos</p>
-                                    </div>
-                                </label>
-                                <label class="flex items-center p-4 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-green-500 transition-colors">
-                                    <input type="radio" name="tipoRecoleccion" value="programada" class="mr-3 text-green-600">
-                                    <div class="flex-1">
-                                        <div class="flex items-center">
-                                            <i class="fas fa-calendar text-blue-500 mr-2"></i>
-                                            <span class="font-medium">Recolección Programada</span>
-                                        </div>
-                                        <p class="text-sm text-gray-500 mt-1">Selecciona fecha y hora</p>
-                                    </div>
-                                </label>
-                            </div>
-                        </div>
-                        <!-- Programación (solo si es programada) -->
-                        <div id="programacion-fields" class="hidden space-y-3">
-                            <div>
-                                <label class="block text-gray-700 text-sm font-semibold mb-2">Fecha</label>
-                                <input type="date" id="fecha-programada" 
-                                       class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                            </div>
-                            <div>
-                                <label class="block text-gray-700 text-sm font-semibold mb-2">Hora</label>
-                                <input type="time" id="hora-programada" 
-                                       class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                            </div>
-                        </div>
-                        <button type="submit" 
-                                class="w-full bg-green-600 text-white py-4 rounded-xl font-semibold hover:bg-green-700 transition-colors">
-                            <i class="fas fa-paper-plane mr-2"></i>
-                            Solicitar Recolección
-                        </button>
-                    </form>
-                </div>
-            </div>
-            <!-- Seguimiento de Solicitud -->
-            <div id="seguimiento-solicitud" class="hidden p-4">
-                <div class="bg-white rounded-2xl p-6 shadow-sm">
-                    <h2 class="text-2xl font-bold text-gray-800 mb-6">Seguimiento de Solicitud</h2>
-                    <div id="estado-solicitud" class="mb-6">
-                        <!-- Estado se actualizará dinámicamente -->
-                    </div>
-                    <div id="info-reciclador" class="hidden bg-gray-50 rounded-xl p-4 mb-6">
-                        <h3 class="font-semibold text-gray-800 mb-3">Tu Reciclador</h3>
-                        <div class="flex items-center">
-                            <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mr-3">
-                                <i class="fas fa-user text-white"></i>
-                            </div>
-                            <div>
-                                <p id="nombre-reciclador" class="font-medium"></p>
-                                <p id="organizacion-reciclador" class="text-sm text-gray-500"></p>
-                            </div>
-                        </div>
-                    </div>
-                    <div id="mapa-seguimiento" class="h-64 rounded-xl border border-gray-300 mb-6"></div>
-                    <div class="flex space-x-3">
-                        <button id="cancelar-solicitud" 
-                                class="flex-1 bg-red-500 text-white py-3 rounded-xl font-semibold hover:bg-red-600 transition-colors">
-                            Cancelar
-                        </button>
-                        <button id="contactar-reciclador" 
-                                class="flex-1 bg-blue-500 text-white py-3 rounded-xl font-semibold hover:bg-blue-600 transition-colors">
-                            Contactar
-                        </button>
-                    </div>
-                </div>
-            </div>
-            <!-- Historial Usuario -->
-            <div id="historial-usuario" class="hidden p-4">
-                <div class="flex items-center mb-6">
-                    <button id="back-historial-usuario" class="text-gray-500 hover:text-gray-700 mr-3">
-                        <i class="fas fa-arrow-left text-xl"></i>
-                    </button>
-                    <h2 class="text-2xl font-bold text-gray-800">Mi Historial</h2>
-                </div>
-                <div id="lista-historial-usuario" class="space-y-4">
-                    <!-- Historial se cargará aquí -->
-                </div>
-            </div>
-        </div>
-        <!-- Reciclador Module -->
-        <div id="reciclador-module" class="hidden">
-            <!-- Home Screen Reciclador -->
-            <div id="reciclador-home" class="p-4 space-y-6">
-                <div class="bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl p-6 text-white">
-                    <h2 class="text-2xl font-bold mb-2">¡Hola, reciclador!</h2>
-                    <p class="text-blue-100">Solicitudes disponibles en tu área</p>
-                </div>
-                <!-- Estado del reciclador -->
-                <div class="bg-white rounded-2xl p-4 shadow-sm">
-                    <div class="flex items-center justify-between">
-                        <span class="font-semibold text-gray-800">Estado:</span>
-                        <div class="flex items-center">
-                            <div id="estado-indicator" class="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-                            <span id="estado-text" class="text-green-600 font-semibold">Disponible</span>
-                        </div>
-                    </div>
-                </div>
-                <!-- Solicitudes Disponibles -->
-                <div class="bg-white rounded-2xl p-6 shadow-sm">
-                    <h3 class="text-lg font-bold text-gray-800 mb-4">Solicitudes Cercanas</h3>
-                    <div id="solicitudes-disponibles" class="space-y-3">
-                        <!-- Solicitudes disponibles se cargarán aquí -->
-                    </div>
-                </div>
-                <!-- Botones de acción -->
-                <div class="grid grid-cols-2 gap-4">
-                    <button id="mapa-solicitudes-btn" 
-                            class="bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow text-center">
-                        <i class="fas fa-map text-green-600 text-3xl mb-2"></i>
-                        <p class="font-semibold text-gray-800">Ver Mapa</p>
-                    </button>
-                    <button id="historial-reciclador-btn" 
-                            class="bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow text-center">
-                        <i class="fas fa-history text-blue-600 text-3xl mb-2"></i>
-                        <p class="font-semibold text-gray-800">Mi Historial</p>
-                    </button>
-                </div>
-            </div>
-            <!-- Mapa de Solicitudes -->
-            <div id="mapa-solicitudes" class="hidden p-4">
-                <div class="flex items-center mb-6">
-                    <button id="back-mapa-solicitudes" class="text-gray-500 hover:text-gray-700 mr-3">
-                        <i class="fas fa-arrow-left text-xl"></i>
-                    </button>
-                    <h2 class="text-2xl font-bold text-gray-800">Mapa de Solicitudes</h2>
-                </div>
-                <div id="map-reciclador" class="border border-gray-300 rounded-xl mb-4"></div>
-                <div class="bg-white rounded-xl p-4 shadow-sm">
-                    <h3 class="font-semibold text-gray-800 mb-3">Leyenda</h3>
-                    <div class="space-y-2 text-sm text-gray-600">
-                        <div class="flex items-center">
-                            <div class="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
-                            <span>Solicitudes inmediatas</span>
-                        </div>
-                        <div class="flex items-center">
-                            <div class="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
-                            <span>Solicitudes programadas</span>
-                        </div>
-                        <div class="flex items-center">
-                            <div class="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-                            <span>Tu ubicación</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!-- Servicio Activo -->
-            <div id="servicio-activo" class="hidden p-4">
-                <div class="bg-white rounded-2xl p-6 shadow-sm">
-                    <h2 class="text-2xl font-bold text-gray-800 mb-6">Servicio en Curso</h2>
-                    <div id="info-usuario-servicio" class="bg-gray-50 rounded-xl p-4 mb-6">
-                        <h3 class="font-semibold text-gray-800 mb-3">Información del Usuario</h3>
-                        <div class="space-y-2 text-sm text-gray-600">
-                            <p><span class="font-medium">Tipo:</span> <span id="tipo-residuo-servicio"></span></p>
-                            <p><span class="font-medium">Cantidad:</span> <span id="cantidad-servicio"></span></p>
-                            <p><span class="font-medium">Distancia:</span> <span id="distancia-servicio"></span></p>
-                        </div>
-                    </div>
-                    <div id="mapa-ruta" class="h-64 rounded-xl border border-gray-300 mb-6"></div>
-                    <div class="space-y-3">
-                        <button id="marcar-llegada" 
-                                class="w-full bg-orange-500 text-white py-3 rounded-xl font-semibold hover:bg-orange-600 transition-colors">
-                            <i class="fas fa-map-marker-alt mr-2"></i>
-                            Marcar Llegada
-                        </button>
-                        <button id="completar-recoleccion" 
-                                class="hidden w-full bg-green-600 text-white py-3 rounded-xl font-semibold hover:bg-green-700 transition-colors">
-                            <i class="fas fa-check-circle mr-2"></i>
-                            Completar Recolección
-                        </button>
-                    </div>
-                </div>
-            </div>
-            <!-- Historial Reciclador -->
-            <div id="historial-reciclador" class="hidden p-4">
-                <div class="flex items-center mb-6">
-                    <button id="back-historial-reciclador" class="text-gray-500 hover:text-gray-700 mr-3">
-                        <i class="fas fa-arrow-left text-xl"></i>
-                    </button>
-                    <h2 class="text-2xl font-bold text-gray-800">Mi Historial</h2>
-                </div>
-                <div id="lista-historial-reciclador" class="space-y-4">
-                    <!-- Historial se cargará aquí -->
-                </div>
-            </div>
-        </div>
+        
+        <!-- Rest of your app content -->
     </div>
-    <!-- Modal de Calificación -->
-    <div id="modal-calificacion" class="hidden fixed inset-0 bg-black bg-opacity-50 modal-overlay z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl p-6 w-full max-w-md slide-up">
-            <h3 class="text-xl font-bold text-gray-800 mb-4">Calificar Servicio</h3>
-            <form id="formCalificacion">
-                <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-semibold mb-3">Calificación</label>
-                    <div class="flex justify-center space-x-2">
-                        <button type="button" class="star-btn text-2xl text-gray-300 hover:text-yellow-500 transition-colors" data-rating="1">★</button>
-                        <button type="button" class="star-btn text-2xl text-gray-300 hover:text-yellow-500 transition-colors" data-rating="2">★</button>
-                        <button type="button" class="star-btn text-2xl text-gray-300 hover:text-yellow-500 transition-colors" data-rating="3">★</button>
-                        <button type="button" class="star-btn text-2xl text-gray-300 hover:text-yellow-500 transition-colors" data-rating="4">★</button>
-                        <button type="button" class="star-btn text-2xl text-gray-300 hover:text-yellow-500 transition-colors" data-rating="5">★</button>
-                    </div>
-                </div>
-                <div class="mb-6">
-                    <label class="block text-gray-700 text-sm font-semibold mb-2">Comentario (Opcional)</label>
-                    <textarea id="comentario-calificacion" rows="3" 
-                              class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                              placeholder="Comparte tu experiencia..."></textarea>
-                </div>
-                <div class="flex space-x-3">
-                    <button type="button" id="cancelar-calificacion" 
-                            class="flex-1 bg-gray-300 text-gray-700 py-3 rounded-xl font-semibold hover:bg-gray-400 transition-colors">
-                        Cancelar
-                    </button>
-                    <button type="submit" 
-                            class="flex-1 bg-green-600 text-white py-3 rounded-xl font-semibold hover:bg-green-700 transition-colors">
-                        Enviar
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
+    
     <script>
         // Configuración de Firebase
         const firebaseConfig = {
@@ -485,1020 +154,50 @@
             messagingSenderId: "675875410563",
             appId: "1:675875410563:web:18254ae4f8d9c8e9f3c123"
         };
+        
         // Inicializar Firebase
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
         const storage = firebase.storage();
+        
         // Variables globales
         let currentUser = null;
         let userRole = null;
-        let map = null;
-        let marker = null;
-        let selectedLocation = null;
-        let recicladorMap = null;
-        let followingMap = null;
-        let currentSeguimientoUnsubscribe = null;
-        let currentServicioUnsubscribe = null;
-        let currentSolicitudId = null;
-
+        
         // Elementos del DOM
         const loadingScreen = document.getElementById('loading-screen');
         const authScreen = document.getElementById('auth-screen');
         const appContainer = document.getElementById('app-container');
-
-        // Inicialización de la aplicación
-        document.addEventListener('DOMContentLoaded', function() {
-            // Ocultar loading después de 2 segundos
-            setTimeout(() => {
-                loadingScreen.classList.add('hidden');
-                authScreen.classList.remove('hidden');
-            }, 2000);
-            initializeAuthListeners();
-            initializeUIListeners();
-            // Cargar Google Maps API de forma asíncrona para mejorar el rendimiento
-            loadGoogleMapsAPI();
-        });
-
-        // Función para cargar Google Maps API de forma asíncrona
-        function loadGoogleMapsAPI() {
-            return new Promise((resolve, reject) => {
-                // Crear script de Google Maps
-                const script = document.createElement('script');
-                script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyCIra7bW5kBj3ynwsAf-H-c97vWgptfnaE&libraries=places,geometry&callback=googleMapsCallback`;
-                script.async = true;
-                script.defer = true;
-                script.onerror = reject;
-                window.googleMapsCallback = () => {
-                    console.log('Google Maps API cargada correctamente');
-                    resolve();
-                };
-                document.head.appendChild(script);
-            });
+        
+        // Validación de email
+        function validateEmail(email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return emailRegex.test(email);
         }
-
-        // Callback para cuando Google Maps se haya cargado
-        window.googleMapsCallback = function() {
-            console.log('Google Maps API cargada correctamente');
-            // Aquí puedes inicializar cualquier funcionalidad de mapas que necesites
-        };
-
-        // ===========================================
-        // AUTENTICACIÓN
-        // ===========================================
-        function initializeAuthListeners() {
-            // Monitor de estado de autenticación
-            auth.onAuthStateChanged(async (user) => {
-                if (user) {
-                    currentUser = user;
-                    await loadUserData();
-                    showMainApp();
-                } else {
-                    currentUser = null;
-                    showAuthScreen();
-                }
-            });
-
-            // Formulario de login
-            document.getElementById('login-form').addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const email = document.getElementById('email-login').value;
-                const password = document.getElementById('password-login').value;
-                try {
-                    await auth.signInWithEmailAndPassword(email, password);
-                    showNotification('¡Inicio de sesión exitoso!', 'success');
-                } catch (error) {
-                    showNotification('Error al iniciar sesión: ' + error.message, 'error');
-                }
-            });
-
-            // Formulario de registro
-            document.getElementById('signup-form').addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const nombre = document.getElementById('nombre-register').value;
-                const email = document.getElementById('email-register').value;
-                const password = document.getElementById('password-register').value;
-                const rol = document.getElementById('rol-register').value;
-                const organizacion = document.getElementById('organizacion-register').value;
-                
-                if (!nombre || !email || !password || !rol) {
-                    showNotification('Por favor, completa todos los campos requeridos', 'error');
-                    return;
-                }
-
-                try {
-                    const userCredential = await auth.createUserWithEmailAndPassword(email, password);
-                    const user = userCredential.user;
-                    // Crear documento del usuario en Firestore
-                    await db.collection('usuarios').doc(user.uid).set({
-                        nombre: nombre,
-                        email: email,
-                        rol: rol,
-                        organizacion: organizacion || '',
-                        fechaRegistro: firebase.firestore.FieldValue.serverTimestamp(),
-                        activo: true
-                    });
-                    showNotification('¡Registro exitoso!', 'success');
-                } catch (error) {
-                    showNotification('Error al registrarse: ' + error.message, 'error');
-                }
-            });
-
-            // Login con Google
-            document.getElementById('login-google').addEventListener('click', async () => {
-                const provider = new firebase.auth.GoogleAuthProvider();
-                try {
-                    const result = await auth.signInWithPopup(provider);
-                    const user = result.user;
-                    // Verificar si es usuario nuevo
-                    const userDoc = await db.collection('usuarios').doc(user.uid).get();
-                    if (!userDoc.exists) {
-                        // Crear documento para nuevo usuario
-                        await db.collection('usuarios').doc(user.uid).set({
-                            nombre: user.displayName,
-                            email: user.email,
-                            rol: 'usuario', // Por defecto usuario
-                            organizacion: '',
-                            fechaRegistro: firebase.firestore.FieldValue.serverTimestamp(),
-                            activo: true
-                        });
-                    }
-                    showNotification('¡Inicio de sesión exitoso!', 'success');
-                } catch (error) {
-                    showNotification('Error al iniciar sesión con Google: ' + error.message, 'error');
-                }
-            });
-
-            // Alternar entre login y registro
-            document.getElementById('show-register').addEventListener('click', () => {
-                document.querySelector('#auth-screen > div > div:first-child').classList.add('hidden');
-                document.getElementById('register-form').classList.remove('hidden');
-            });
-            document.getElementById('show-login').addEventListener('click', () => {
-                document.getElementById('register-form').classList.add('hidden');
-                document.querySelector('#auth-screen > div > div:first-child').classList.remove('hidden');
-            });
-
-            // Mostrar campo organización para recicladores
-            document.getElementById('rol-register').addEventListener('change', (e) => {
-                const orgField = document.getElementById('organizacion-field');
-                if (e.target.value === 'reciclador') {
-                    orgField.classList.remove('hidden');
-                    document.getElementById('organizacion-register').required = true;
-                } else {
-                    orgField.classList.add('hidden');
-                    document.getElementById('organizacion-register').required = false;
-                }
-            });
-
-            // Logout
-            document.getElementById('logout-btn').addEventListener('click', async () => {
-                try {
-                    await auth.signOut();
-                    showNotification('Sesión cerrada', 'info');
-                } catch (error) {
-                    showNotification('Error al cerrar sesión', 'error');
-                }
-            });
-        }
-
-        async function loadUserData() {
-            try {
-                const userDoc = await db.collection('usuarios').doc(currentUser.uid).get();
-                if (userDoc.exists) {
-                    const userData = userDoc.data();
-                    userRole = userData.rol;
-                    document.getElementById('user-name').textContent = userData.nombre;
-                }
-            } catch (error) {
-                console.error('Error al cargar datos del usuario:', error);
-                showNotification('Error al cargar datos del usuario', 'error');
-            }
-        }
-
-        function showAuthScreen() {
-            authScreen.classList.remove('hidden');
-            appContainer.classList.add('hidden');
-            // Limpiar listeners de seguimiento
-            if (currentSeguimientoUnsubscribe) {
-                currentSeguimientoUnsubscribe();
-                currentSeguimientoUnsubscribe = null;
-            }
-            if (currentServicioUnsubscribe) {
-                currentServicioUnsubscribe();
-                currentServicioUnsubscribe = null;
-            }
-        }
-
-        function showMainApp() {
-            authScreen.classList.add('hidden');
-            appContainer.classList.remove('hidden');
-            // Mostrar módulo según el rol
-            if (userRole === 'usuario') {
-                document.getElementById('usuario-module').classList.remove('hidden');
-                document.getElementById('reciclador-module').classList.add('hidden');
-                loadSolicitudesActivas();
-            } else if (userRole === 'reciclador') {
-                document.getElementById('reciclador-module').classList.remove('hidden');
-                document.getElementById('usuario-module').classList.add('hidden');
-                loadSolicitudesDisponibles();
-            }
-        }
-
-        // ===========================================
-        // NAVEGACIÓN Y UI
-        // ===========================================
-        function initializeUIListeners() {
-            // Navegación Usuario
-            document.getElementById('nueva-solicitud-btn').addEventListener('click', () => {
-                showScreen('nueva-solicitud');
-                initializeUserMap();
-            });
-            document.getElementById('historial-usuario-btn').addEventListener('click', () => {
-                showScreen('historial-usuario');
-                loadHistorialUsuario();
-            });
-            document.getElementById('back-to-home').addEventListener('click', () => {
-                showScreen('usuario-home');
-                if (currentSeguimientoUnsubscribe) {
-                    currentSeguimientoUnsubscribe();
-                    currentSeguimientoUnsubscribe = null;
-                }
-                loadSolicitudesActivas();
-            });
-            document.getElementById('back-historial-usuario').addEventListener('click', () => {
-                showScreen('usuario-home');
-            });
-
-            // Navegación Reciclador
-            document.getElementById('mapa-solicitudes-btn').addEventListener('click', () => {
-                showScreen('mapa-solicitudes');
-                initializeRecicladorMap();
-            });
-            document.getElementById('historial-reciclador-btn').addEventListener('click', () => {
-                showScreen('historial-reciclador');
-                loadHistorialReciclador();
-            });
-            document.getElementById('back-mapa-solicitudes').addEventListener('click', () => {
-                showScreen('reciclador-home');
-            });
-            document.getElementById('back-historial-reciclador').addEventListener('click', () => {
-                showScreen('reciclador-home');
-            });
-
-            // Formulario de solicitud
-            document.getElementById('formSolicitud').addEventListener('submit', handleSolicitudSubmit);
-
-            // Tipo de recolección
-            document.querySelectorAll('input[name="tipoRecoleccion"]').forEach(radio => {
-                radio.addEventListener('change', (e) => {
-                    const programacionFields = document.getElementById('programacion-fields');
-                    if (e.target.value === 'programada') {
-                        programacionFields.classList.remove('hidden');
-                        // Establecer fecha mínima como hoy
-                        const today = new Date().toISOString().split('T')[0];
-                        document.getElementById('fecha-programada').min = today;
-                    } else {
-                        programacionFields.classList.add('hidden');
-                    }
-                });
-            });
-
-            // Foto del residuo
-            document.getElementById('foto-btn').addEventListener('click', () => {
-                document.getElementById('fotoResiduo').click();
-            });
-            document.getElementById('fotoResiduo').addEventListener('change', handlePhotoPreview);
-
-            // Calificación
-            initializeRatingSystem();
-
-            // Eventos del modal de calificación
-            document.getElementById('formCalificacion').addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const rating = document.querySelector('.star-btn.text-yellow-500') ? 
-                    document.querySelectorAll('.star-btn.text-yellow-500').length : 0;
-                const comentario = document.getElementById('comentario-calificacion').value;
-                
-                if (rating === 0) {
-                    showNotification('Por favor, selecciona una calificación', 'warning');
-                    return;
-                }
-                
-                try {
-                    await db.collection('solicitudes').doc(currentSolicitudId).update({
-                        calificacion: rating,
-                        comentario: comentario,
-                        fechaCalificacion: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-                    showNotification('¡Gracias por tu calificación!', 'success');
-                    document.getElementById('modal-calificacion').classList.add('hidden');
-                    // Limpiar formulario
-                    document.getElementById('formCalificacion').reset();
-                    updateStarsRating(0);
-                    
-                    // Volver al home después de calificar
-                    setTimeout(() => {
-                        showScreen('usuario-home');
-                    }, 1000);
-                    
-                } catch (error) {
-                    console.error('Error al enviar calificación:', error);
-                    showNotification('Error al enviar la calificación', 'error');
-                }
-            });
-
-            document.getElementById('cancelar-calificacion').addEventListener('click', () => {
-                document.getElementById('modal-calificacion').classList.add('hidden');
-                document.getElementById('formCalificacion').reset();
-                updateStarsRating(0);
-            });
-
-            // Botones de seguimiento
-            document.getElementById('cancelar-solicitud').addEventListener('click', async () => {
-                if (confirm('¿Estás seguro de que deseas cancelar esta solicitud?')) {
-                    try {
-                        await db.collection('solicitudes').doc(currentSolicitudId).update({
-                            estado: 'cancelada'
-                        });
-                        showNotification('Solicitud cancelada', 'info');
-                        showScreen('usuario-home');
-                    } catch (error) {
-                        showNotification('Error al cancelar la solicitud', 'error');
-                    }
-                }
-            });
-
-            document.getElementById('contactar-reciclador').addEventListener('click', () => {
-                showNotification('Funcionalidad de contacto no disponible temporalmente', 'info');
-            });
-
-            // Botones de servicio activo
-            document.getElementById('marcar-llegada').addEventListener('click', async () => {
-                try {
-                    await db.collection('solicitudes').doc(currentSolicitudId).update({
-                        estado: 'en_sitio'
-                    });
-                    showNotification('Llegada marcada', 'success');
-                } catch (error) {
-                    showNotification('Error al marcar llegada', 'error');
-                }
-            });
-
-            document.getElementById('completar-recoleccion').addEventListener('click', async () => {
-                try {
-                    await db.collection('solicitudes').doc(currentSolicitudId).update({
-                        estado: 'completada',
-                        fechaCompletado: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-                    showNotification('Recolección completada', 'success');
-                    setTimeout(() => {
-                        showScreen('reciclador-home');
-                        if (currentServicioUnsubscribe) {
-                            currentServicioUnsubscribe();
-                            currentServicioUnsubscribe = null;
-                        }
-                        loadSolicitudesDisponibles();
-                    }, 1500);
-                } catch (error) {
-                    showNotification('Error al completar recolección', 'error');
-                }
-            });
-        }
-
-        function showScreen(screenId) {
-            // Ocultar todas las pantallas
-            document.querySelectorAll('[id$="-home"], [id^="nueva-"], [id^="historial-"], [id^="mapa-"], [id^="seguimiento-"], [id^="servicio-"]').forEach(screen => {
-                screen.classList.add('hidden');
-            });
-            // Mostrar pantalla solicitada
-            document.getElementById(screenId).classList.remove('hidden');
-        }
-
-        // ===========================================
-        // MAPA - USUARIO
-        // ===========================================
-        function initializeUserMap() {
-            // Esperar a que Google Maps esté disponible
-            if (typeof google === 'undefined') {
-                setTimeout(initializeUserMap, 500);
-                return;
-            }
-            
-            const mapElement = document.getElementById('map-usuario');
-            // Bogotá como ubicación por defecto
-            const bogota = { lat: 4.7110, lng: -74.0721 };
-            map = new google.maps.Map(mapElement, {
-                zoom: 13,
-                center: bogota,
-                styles: [
-                    {
-                        featureType: 'poi',
-                        elementType: 'labels',
-                        stylers: [{ visibility: 'off' }]
-                    }
-                ]
-            });
-            
-            // Intentar obtener ubicación actual
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        const userLocation = {
-                            lat: position.coords.latitude,
-                            lng: position.coords.longitude
-                        };
-                        map.setCenter(userLocation);
-                        selectedLocation = userLocation;
-                        marker = new google.maps.Marker({
-                            position: userLocation,
-                            map: map,
-                            draggable: true,
-                            title: 'Ubicación de recolección'
-                        });
-                        marker.addListener('dragend', () => {
-                            selectedLocation = {
-                                lat: marker.getPosition().lat(),
-                                lng: marker.getPosition().lng()
-                            };
-                        });
-                    },
-                    () => {
-                        // Si no se puede obtener la ubicación, usar Bogotá
-                        selectedLocation = bogota;
-                        marker = new google.maps.Marker({
-                            position: bogota,
-                            map: map,
-                            draggable: true,
-                            title: 'Ubicación de recolección'
-                        });
-                    }
-                );
-            }
-            
-            // Click en el mapa para colocar marcador
-            map.addListener('click', (e) => {
-                selectedLocation = {
-                    lat: e.latLng.lat(),
-                    lng: e.latLng.lng()
-                };
-                if (marker) {
-                    marker.setPosition(selectedLocation);
-                } else {
-                    marker = new google.maps.Marker({
-                        position: selectedLocation,
-                        map: map,
-                        draggable: true,
-                        title: 'Ubicación de recolección'
-                    });
-                }
-            });
-        }
-
-        // ===========================================
-        // MAPA - RECICLADOR
-        // ===========================================
-        function initializeRecicladorMap() {
-            // Esperar a que Google Maps esté disponible
-            if (typeof google === 'undefined') {
-                setTimeout(initializeRecicladorMap, 500);
-                return;
-            }
-            
-            const mapElement = document.getElementById('map-reciclador');
-            const bogota = { lat: 4.7110, lng: -74.0721 };
-            recicladorMap = new google.maps.Map(mapElement, {
-                zoom: 12,
-                center: bogota
-            });
-            
-            // Intentar obtener ubicación actual del reciclador
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition((position) => {
-                    const currentLocation = {
-                        lat: position.coords.latitude,
-                        lng: position.coords.longitude
-                    };
-                    // Marcador de ubicación actual
-                    new google.maps.Marker({
-                        position: currentLocation,
-                        map: recicladorMap,
-                        title: 'Tu ubicación',
-                        icon: {
-                            url: 'image/svg+xml;charset=UTF-8,%3Csvg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20"%3E%3Ccircle cx="10" cy="10" r="8" fill="%2310b981"/%3E%3C/svg%3E',
-                            scaledSize: new google.maps.Size(20, 20)
-                        }
-                    });
-                    recicladorMap.setCenter(currentLocation);
-                });
-            }
-            
-            // Cargar solicitudes en el mapa
-            loadSolicitudesEnMapa();
-        }
-
-        async function loadSolicitudesEnMapa() {
-            try {
-                const solicitudesSnapshot = await db.collection('solicitudes')
-                    .where('estado', '==', 'pendiente')
-                    .get();
-                solicitudesSnapshot.forEach(doc => {
-                    const solicitud = doc.data();
-                    const solicitudId = doc.id;
-                    if (solicitud.ubicacion) {
-                        const marker = new google.maps.Marker({
-                            position: {
-                                lat: solicitud.ubicacion.lat,
-                                lng: solicitud.ubicacion.lng
-                            },
-                            map: recicladorMap,
-                            title: `${solicitud.tipoResiduo} - ${solicitud.cantidad || 'N/A'}`,
-                            icon: {
-                                url: solicitud.tipoRecoleccion === 'inmediata' 
-                                    ? 'image/svg+xml;charset=UTF-8,%3Csvg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20"%3E%3Ccircle cx="10" cy="10" r="8" fill="%23ef4444"/%3E%3C/svg%3E'
-                                    : 'image/svg+xml;charset=UTF-8,%3Csvg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20"%3E%3Ccircle cx="10" cy="10" r="8" fill="%233b82f6"/%3E%3C/svg%3E',
-                                scaledSize: new google.maps.Size(20, 20)
-                            }
-                        });
-                        const infoWindow = new google.maps.InfoWindow({
-                            content: `
-                                <div class="p-2">
-                                    <h4 class="font-bold">${solicitud.tipoResiduo}</h4>
-                                    <p>Cantidad: ${solicitud.cantidad ? 
-                                        `${solicitud.cantidad.peso ? solicitud.cantidad.peso + ' kg' : ''} ${solicitud.cantidad.bolsas ? solicitud.cantidad.bolsas + ' bolsas' : ''}`.trim() : 
-                                        'No especificada'}</p>
-                                    <p>Tipo: ${solicitud.tipoRecoleccion}</p>
-                                    <button onclick="aceptarSolicitud('${solicitudId}')" 
-                                            class="mt-2 bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600">
-                                        Aceptar
-                                    </button>
-                                </div>
-                            `
-                        });
-                        marker.addListener('click', () => {
-                            infoWindow.open(recicladorMap, marker);
-                        });
-                    }
-                });
-            } catch (error) {
-                console.error('Error al cargar solicitudes en mapa:', error);
-                showNotification('Error al cargar solicitudes en el mapa', 'error');
-            }
-        }
-
-        // ===========================================
-        // SOLICITUDES
-        // ===========================================
-        async function handleSolicitudSubmit(e) {
-            e.preventDefault();
-            if (!selectedLocation) {
-                showNotification('Por favor, selecciona una ubicación en el mapa', 'error');
-                return;
-            }
-            const tipoResiduo = document.querySelector('input[name="tipoResiduo"]:checked')?.value;
-            const tipoRecoleccion = document.querySelector('input[name="tipoRecoleccion"]:checked')?.value;
-            const cantidadPeso = document.getElementById('cantidad-peso').value;
-            const cantidadBolsas = document.getElementById('cantidad-bolsas').value;
-            
-            if (!tipoResiduo || !tipoRecoleccion) {
-                showNotification('Por favor, completa todos los campos requeridos', 'error');
-                return;
-            }
-            
-            try {
-                const solicitudData = {
-                    userId: currentUser.uid,
-                    tipoResiduo: tipoResiduo,
-                    tipoRecoleccion: tipoRecoleccion,
-                    cantidad: {
-                        peso: cantidadPeso || null,
-                        bolsas: cantidadBolsas || null
-                    },
-                    ubicacion: selectedLocation,
-                    estado: 'pendiente',
-                    fechaCreacion: firebase.firestore.FieldValue.serverTimestamp(),
-                    recicladorId: null,
-                    fechaAsignacion: null,
-                    fechaCompletado: null
-                };
-                
-                // Si es programada, agregar fecha y hora
-                if (tipoRecoleccion === 'programada') {
-                    const fecha = document.getElementById('fecha-programada').value;
-                    const hora = document.getElementById('hora-programada').value;
-                    if (!fecha || !hora) {
-                        showNotification('Por favor, selecciona fecha y hora para la recolección programada', 'error');
-                        return;
-                    }
-                    solicitudData.fechaProgramada = new Date(`${fecha}T${hora}`);
-                }
-                
-                // Subir foto si existe
-                const fotoFile = document.getElementById('fotoResiduo').files[0];
-                if (fotoFile) {
-                    const storageRef = storage.ref(`solicitudes/${currentUser.uid}/${Date.now()}_${fotoFile.name}`);
-                    const uploadTask = await storageRef.put(fotoFile);
-                    const fotoURL = await uploadTask.ref.getDownloadURL();
-                    solicitudData.fotoURL = fotoURL;
-                }
-                
-                await db.collection('solicitudes').add(solicitudData);
-                showNotification('¡Solicitud creada exitosamente!', 'success');
-                
-                // Limpiar formulario
-                document.getElementById('formSolicitud').reset();
-                selectedLocation = null;
-                if (marker) {
-                    marker.setMap(null);
-                    marker = null;
-                }
-                
-                // Volver a home
-                showScreen('usuario-home');
-                loadSolicitudesActivas();
-            } catch (error) {
-                console.error('Error al crear solicitud:', error);
-                showNotification('Error al crear la solicitud', 'error');
-            }
-        }
-
-        async function loadSolicitudesActivas() {
-            try {
-                const solicitudesSnapshot = await db.collection('solicitudes')
-                    .where('userId', '==', currentUser.uid)
-                    .where('estado', 'in', ['pendiente', 'asignada', 'en_camino', 'en_sitio'])
-                    .orderBy('fechaCreacion', 'desc')
-                    .get();
-                const container = document.getElementById('solicitudes-activas');
-                container.innerHTML = '';
-                if (solicitudesSnapshot.empty) {
-                    container.innerHTML = '<p class="text-gray-500 text-center">No tienes solicitudes activas</p>';
-                    return;
-                }
-                solicitudesSnapshot.forEach(doc => {
-                    const solicitud = doc.data();
-                    const solicitudId = doc.id;
-                    const solicitudElement = createSolicitudElement(solicitud, solicitudId, true);
-                    container.appendChild(solicitudElement);
-                });
-            } catch (error) {
-                console.error('Error al cargar solicitudes activas:', error);
-                showNotification('Error al cargar solicitudes activas', 'error');
-            }
-        }
-
-        async function loadSolicitudesDisponibles() {
-            try {
-                const solicitudesSnapshot = await db.collection('solicitudes')
-                    .where('estado', '==', 'pendiente')
-                    .orderBy('fechaCreacion', 'desc')
-                    .limit(10)
-                    .get();
-                const container = document.getElementById('solicitudes-disponibles');
-                container.innerHTML = '';
-                if (solicitudesSnapshot.empty) {
-                    container.innerHTML = '<p class="text-gray-500 text-center">No hay solicitudes disponibles</p>';
-                    return;
-                }
-                solicitudesSnapshot.forEach(doc => {
-                    const solicitud = doc.data();
-                    const solicitudId = doc.id;
-                    const solicitudElement = createSolicitudElement(solicitud, solicitudId, false);
-                    container.appendChild(solicitudElement);
-                });
-            } catch (error) {
-                console.error('Error al cargar solicitudes disponibles:', error);
-                showNotification('Error al cargar solicitudes disponibles', 'error');
-            }
-        }
-
-        function createSolicitudElement(solicitud, solicitudId, isUser = false) {
-            const div = document.createElement('div');
-            div.className = 'bg-gray-50 rounded-xl p-4 border border-gray-200';
-            const estadoColor = {
-                'pendiente': 'bg-yellow-100 text-yellow-800',
-                'asignada': 'bg-blue-100 text-blue-800',
-                'en_camino': 'bg-purple-100 text-purple-800',
-                'en_sitio': 'bg-orange-100 text-orange-800',
-                'completada': 'bg-green-100 text-green-800',
-                'cancelada': 'bg-red-100 text-red-800'
+        
+        // Manejo de errores de Firebase
+        function getFirebaseErrorMessage(errorCode) {
+            const errorMessages = {
+                'auth/network-request-failed': 'Error de conexión. Verifica tu internet.',
+                'auth/invalid-credential': 'Credenciales inválidas. Verifica tu email y contraseña.',
+                'auth/user-disabled': 'Esta cuenta ha sido deshabilitada.',
+                'auth/too-many-requests': 'Demasiados intentos. Espera un momento.',
+                'auth/invalid-email': 'Email inválido. Por favor, verifica el formato.',
+                'auth/weak-password': 'La contraseña es muy débil. Usa al menos 6 caracteres.',
+                'auth/email-already-in-use': 'Este email ya está registrado.',
+                'auth/user-not-found': 'Usuario no encontrado. ¿Has creado una cuenta?',
+                'auth/wrong-password': 'Contraseña incorrecta.',
+                'auth/popup-blocked': 'Ventana emergente bloqueada. Permite popups e intenta de nuevo.',
+                'auth/popup-closed-by-user': 'Ventana cerrada por el usuario. Vuelve a intentarlo.'
             };
-            const tipoIcons = {
-                'PET': 'fas fa-bottle-water text-blue-500',
-                'Cartón': 'fas fa-box text-orange-500',
-                'Plástico': 'fas fa-recycle text-green-500',
-                'Papel': 'fas fa-file-alt text-gray-500'
-            };
-            const cantidad = solicitud.cantidad ? 
-                `${solicitud.cantidad.peso ? solicitud.cantidad.peso + ' kg' : ''} ${solicitud.cantidad.bolsas ? solicitud.cantidad.bolsas + ' bolsas' : ''}`.trim() : 
-                'No especificada';
-            const fechaCreacion = solicitud.fechaCreacion ? 
-                new Date(solicitud.fechaCreacion.toDate()).toLocaleDateString() : 
-                'Fecha no disponible';
-
-            let buttonHtml = '';
-            if (isUser) {
-                buttonHtml = `<button onclick="verSeguimiento('${solicitudId}')" class="flex-1 bg-blue-500 text-white py-2 px-4 rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors">
-                    Ver Seguimiento
-                </button>`;
-            } else {
-                buttonHtml = `<button onclick="aceptarSolicitud('${solicitudId}')" class="flex-1 bg-green-500 text-white py-2 px-4 rounded-lg text-sm font-medium hover:bg-green-600 transition-colors">
-                    Aceptar
-                </button>`;
-            }
-
-            div.innerHTML = `
-                <div class="flex items-start justify-between mb-3">
-                    <div class="flex items-center">
-                        <i class="${tipoIcons[solicitud.tipoResiduo] || 'fas fa-recycle text-gray-500'} text-xl mr-3"></i>
-                        <div>
-                            <h4 class="font-semibold text-gray-800">${solicitud.tipoResiduo}</h4>
-                            <p class="text-sm text-gray-600">${cantidad}</p>
-                            <p class="text-xs text-gray-500">${fechaCreacion}</p>
-                        </div>
-                    </div>
-                    <span class="px-2 py-1 rounded-full text-xs font-medium ${estadoColor[solicitud.estado] || 'bg-gray-100 text-gray-800'}">
-                        ${solicitud.estado.charAt(0).toUpperCase() + solicitud.estado.slice(1)}
-                    </span>
-                </div>
-                <div class="text-sm text-gray-600 mb-3">
-                    <p><i class="fas fa-clock mr-1"></i> ${solicitud.tipoRecoleccion === 'inmediata' ? 'Inmediata' : 'Programada'}</p>
-                    ${solicitud.fechaProgramada ? `<p><i class="fas fa-calendar mr-1"></i> ${new Date(solicitud.fechaProgramada.toDate()).toLocaleString()}</p>` : ''}
-                </div>
-                <div class="flex space-x-2">
-                    ${buttonHtml}
-                </div>
-            `;
-            return div;
+            return errorMessages[errorCode] || 'Error de autenticación. Intenta de nuevo.';
         }
-
-        async function initializeSeguimiento(solicitudId) {
-            currentSolicitudId = solicitudId;
-            
-            // Limpiar listener anterior si existe
-            if (currentSeguimientoUnsubscribe) {
-                currentSeguimientoUnsubscribe();
-            }
-            
-            try {
-                // Escuchar cambios en tiempo real
-                currentSeguimientoUnsubscribe = db.collection('solicitudes').doc(solicitudId)
-                    .onSnapshot(async (doc) => {
-                        if (doc.exists) {
-                            const solicitud = doc.data();
-                            updateEstadoSolicitud(solicitud);
-                            if (solicitud.recicladorId) {
-                                await loadInfoReciclador(solicitud.recicladorId);
-                            }
-                        }
-                    });
-            } catch (error) {
-                console.error('Error al inicializar seguimiento:', error);
-                showNotification('Error al cargar seguimiento', 'error');
-            }
-        }
-
-        function updateEstadoSolicitud(solicitud) {
-            const container = document.getElementById('estado-solicitud');
-            const estados = {
-                'pendiente': {
-                    icon: 'fas fa-clock',
-                    color: 'text-yellow-600',
-                    titulo: 'Solicitud Pendiente',
-                    descripcion: 'Esperando que un reciclador acepte tu solicitud'
-                },
-                'asignada': {
-                    icon: 'fas fa-user-check',
-                    color: 'text-blue-600',
-                    titulo: 'Reciclador Asignado',
-                    descripcion: 'Un reciclador ha aceptado tu solicitud'
-                },
-                'en_camino': {
-                    icon: 'fas fa-route',
-                    color: 'text-purple-600',
-                    titulo: 'En Camino',
-                    descripcion: 'El reciclador se dirige a tu ubicación'
-                },
-                'en_sitio': {
-                    icon: 'fas fa-map-marker-alt',
-                    color: 'text-orange-600',
-                    titulo: 'En el Sitio',
-                    descripcion: 'El reciclador ha llegado a tu ubicación'
-                },
-                'completada': {
-                    icon: 'fas fa-check-circle',
-                    color: 'text-green-600',
-                    titulo: 'Completada',
-                    descripcion: 'La recolección ha sido completada exitosamente'
-                },
-                'cancelada': {
-                    icon: 'fas fa-times-circle',
-                    color: 'text-red-600',
-                    titulo: 'Cancelada',
-                    descripcion: 'La solicitud ha sido cancelada'
-                }
-            };
-            
-            const estadoInfo = estados[solicitud.estado] || estados['pendiente'];
-            container.innerHTML = `
-                <div class="text-center mb-6">
-                    <i class="${estadoInfo.icon} text-4xl ${estadoInfo.color} mb-3"></i>
-                    <h3 class="text-xl font-bold text-gray-800">${estadoInfo.titulo}</h3>
-                    <p class="text-gray-600">${estadoInfo.descripcion}</p>
-                </div>
-                <div class="bg-gray-50 rounded-xl p-4">
-                    <h4 class="font-semibold text-gray-800 mb-2">Detalles de la Solicitud</h4>
-                    <div class="space-y-1 text-sm text-gray-600">
-                        <p><span class="font-medium">Tipo:</span> ${solicitud.tipoResiduo}</p>
-                        <p><span class="font-medium">Cantidad:</span> ${solicitud.cantidad ? 
-                            `${solicitud.cantidad.peso || ''} ${solicitud.cantidad.bolsas || ''}`.trim() : 
-                            'No especificada'}</p>
-                        <p><span class="font-medium">Recolección:</span> ${solicitud.tipoRecoleccion}</p>
-                        ${solicitud.fechaProgramada ? 
-                            `<p><span class="font-medium">Programada para:</span> ${new Date(solicitud.fechaProgramada.toDate()).toLocaleString()}</p>` : 
-                            ''}
-                    </div>
-                </div>
-            `;
-            
-            // Mostrar/ocultar información del reciclador
-            const infoReciclador = document.getElementById('info-reciclador');
-            if (solicitud.recicladorId && ['asignada', 'en_camino', 'en_sitio', 'completada'].includes(solicitud.estado)) {
-                infoReciclador.classList.remove('hidden');
-            } else {
-                infoReciclador.classList.add('hidden');
-            }
-            
-            // Si está completada y no tiene calificación, mostrar modal
-            if (solicitud.estado === 'completada' && !solicitud.calificacion) {
-                setTimeout(() => {
-                    document.getElementById('modal-calificacion').classList.remove('hidden');
-                }, 1000);
-            }
-        }
-
-        async function loadInfoReciclador(recicladorId) {
-            try {
-                const recicladorDoc = await db.collection('usuarios').doc(recicladorId).get();
-                if (recicladorDoc.exists) {
-                    const reciclador = recicladorDoc.data();
-                    document.getElementById('nombre-reciclador').textContent = reciclador.nombre;
-                    document.getElementById('organizacion-reciclador').textContent = reciclador.organizacion || 'Reciclador independiente';
-                }
-            } catch (error) {
-                console.error('Error al cargar información del reciclador:', error);
-            }
-        }
-
-        async function initializeServicioActivo(solicitudId) {
-            currentSolicitudId = solicitudId;
-            
-            // Limpiar listener anterior si existe
-            if (currentServicioUnsubscribe) {
-                currentServicioUnsubscribe();
-            }
-            
-            try {
-                // Escuchar cambios en la solicitud
-                currentServicioUnsubscribe = db.collection('solicitudes').doc(solicitudId)
-                    .onSnapshot(async (doc) => {
-                        if (doc.exists) {
-                            const solicitud = doc.data();
-                            updateServicioActivo(solicitud, solicitudId);
-                        }
-                    });
-            } catch (error) {
-                console.error('Error al inicializar servicio activo:', error);
-                showNotification('Error al cargar servicio', 'error');
-            }
-        }
-
-        function updateServicioActivo(solicitud, solicitudId) {
-            // Actualizar información del usuario
-            document.getElementById('tipo-residuo-servicio').textContent = solicitud.tipoResiduo;
-            document.getElementById('cantidad-servicio').textContent = solicitud.cantidad ? 
-                `${solicitud.cantidad.peso || ''} ${solicitud.cantidad.bolsas || ''}`.trim() : 
-                'No especificada';
-            
-            // Calcular distancia (simulada por ahora)
-            document.getElementById('distancia-servicio').textContent = '1.2 km';
-            
-            // Configurar botones según el estado
-            const marcarLlegada = document.getElementById('marcar-llegada');
-            const completarRecoleccion = document.getElementById('completar-recoleccion');
-            
-            if (solicitud.estado === 'asignada') {
-                marcarLlegada.classList.remove('hidden');
-                completarRecoleccion.classList.add('hidden');
-            } else if (solicitud.estado === 'en_sitio') {
-                marcarLlegada.classList.add('hidden');
-                completarRecoleccion.classList.remove('hidden');
-            } else {
-                marcarLlegada.classList.add('hidden');
-                completarRecoleccion.classList.add('hidden');
-            }
-            
-            // Inicializar mapa de ruta si no existe
-            if (!followingMap && solicitud.ubicacion) {
-                initializeRutaMap(solicitud.ubicacion);
-            }
-        }
-
-        function initializeRutaMap(destino) {
-            // Esperar a que Google Maps esté disponible
-            if (typeof google === 'undefined') {
-                setTimeout(() => initializeRutaMap(destino), 500);
-                return;
-            }
-            
-            const mapElement = document.getElementById('mapa-ruta');
-            followingMap = new google.maps.Map(mapElement, {
-                zoom: 14,
-                center: destino
-            });
-            
-            // Marcador del destino
-            new google.maps.Marker({
-                position: destino,
-                map: followingMap,
-                title: 'Ubicación de recolección',
-                icon: {
-                    url: 'image/svg+xml;charset=UTF-8,%3Csvg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 30 30"%3E%3Ccircle cx="15" cy="15" r="12" fill="%23ef4444"/%3E%3Ctext x="15" y="20" text-anchor="middle" fill="white" font-size="16"%3E📍%3C/text%3E%3C/svg%3E',
-                    scaledSize: new google.maps.Size(30, 30)
-                }
-            });
-            
-            // Intentar obtener ubicación actual del reciclador
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition((position) => {
-                    const currentLocation = {
-                        lat: position.coords.latitude,
-                        lng: position.coords.longitude
-                    };
-                    
-                    // Marcador de ubicación actual
-                    new google.maps.Marker({
-                        position: currentLocation,
-                        map: followingMap,
-                        title: 'Tu ubicación',
-                        icon: {
-                            url: 'data:image/svg+xml;charset=UTF-8,%3Csvg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20"%3E%3Ccircle cx="10" cy="10" r="8" fill="%2310b981"/%3E%3C/svg%3E',
-                            scaledSize: new google.maps.Size(20, 20)
-                        }
-                    });
-                    
-                    // Calcular y mostrar ruta
-                    const directionsService = new google.maps.DirectionsService();
-                    const directionsRenderer = new google.maps.DirectionsRenderer();
-                    directionsRenderer.setMap(followingMap);
-                    
-                    directionsService.route({
-                        origin: currentLocation,
-                        destination: destino,
-                        travelMode: google.maps.TravelMode.DRIVING
-                    }, (result, status) => {
-                        if (status === 'OK') {
-                            directionsRenderer.setDirections(result);
-                        }
-                    });
-                });
-            }
-        }
-
-        // ===========================================
-        // FUNCIONES GLOBALES
-        // ===========================================
-        window.aceptarSolicitud = async function(solicitudId) {
-            try {
-                await db.collection('solicitudes').doc(solicitudId).update({
-                    estado: 'asignada',
-                    recicladorId: currentUser.uid,
-                    fechaAsignacion: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                showNotification('¡Solicitud aceptada!', 'success');
-                loadSolicitudesDisponibles();
-                // Cambiar a servicio activo
-                showScreen('servicio-activo');
-                initializeServicioActivo(solicitudId);
-            } catch (error) {
-                console.error('Error al aceptar solicitud:', error);
-                showNotification('Error al aceptar la solicitud', 'error');
-            }
-        };
-
-        window.verSeguimiento = function(solicitudId) {
-            showScreen('seguimiento-solicitud');
-            initializeSeguimiento(solicitudId);
-        };
-
-        // ===========================================
-        // UTILIDADES
-        // ===========================================
+        
+        // Mostrar notificaciones
         function showNotification(message, type = 'info') {
-            // Crear elemento de notificación
             const notification = document.createElement('div');
             notification.className = `fixed top-4 right-4 z-50 px-6 py-3 rounded-lg shadow-lg text-white font-medium transform transition-transform duration-300 translate-x-full`;
-            // Colores según el tipo
             const colors = {
                 'success': 'bg-green-500',
                 'error': 'bg-red-500',
@@ -1508,11 +207,11 @@
             notification.classList.add(colors[type] || colors.info);
             notification.textContent = message;
             document.body.appendChild(notification);
-            // Mostrar notificación
+            
             setTimeout(() => {
                 notification.classList.remove('translate-x-full');
             }, 100);
-            // Ocultar notificación después de 3 segundos
+            
             setTimeout(() => {
                 notification.classList.add('translate-x-full');
                 setTimeout(() => {
@@ -1520,206 +219,183 @@
                 }, 300);
             }, 3000);
         }
-
-        function handlePhotoPreview(e) {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const preview = document.getElementById('foto-preview');
-                    const img = document.getElementById('preview-img');
-                    img.src = e.target.result;
-                    preview.classList.remove('hidden');
-                };
-                reader.readAsDataURL(file);
-            }
-        }
-
-        function initializeRatingSystem() {
-            const stars = document.querySelectorAll('.star-btn');
-            let selectedRating = 0;
-            
-            stars.forEach(star => {
-                star.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    selectedRating = parseInt(e.target.dataset.rating);
-                    updateStars(selectedRating);
-                });
-                
-                star.addEventListener('mouseenter', (e) => {
-                    const rating = parseInt(e.target.dataset.rating);
-                    updateStars(rating);
-                });
-            });
-            
-            // Evento de salida del contenedor de estrellas
-            document.querySelector('.star-btn').parentElement.addEventListener('mouseleave', () => {
-                updateStars(selectedRating);
-            });
-            
-            function updateStars(rating) {
-                stars.forEach((star, index) => {
-                    if (index < rating) {
-                        star.classList.remove('text-gray-300');
-                        star.classList.add('text-yellow-500');
-                    } else {
-                        star.classList.remove('text-yellow-500');
-                        star.classList.add('text-gray-300');
+        
+        // Monitor de estado de autenticación
+        auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                currentUser = user;
+                try {
+                    const userDoc = await db.collection('usuarios').doc(user.uid).get();
+                    if (userDoc.exists) {
+                        const userData = userDoc.data();
+                        userRole = userData.rol;
+                        document.getElementById('user-name').textContent = userData.nombre;
                     }
-                });
-            }
-        }
-
-        function updateStarsRating(rating) {
-            const stars = document.querySelectorAll('.star-btn');
-            stars.forEach((star, index) => {
-                if (index < rating) {
-                    star.classList.remove('text-gray-300');
-                    star.classList.add('text-yellow-500');
-                } else {
-                    star.classList.remove('text-yellow-500');
-                    star.classList.add('text-gray-300');
+                    showMainApp();
+                } catch (error) {
+                    console.error('Error al cargar datos del usuario:', error);
+                    showNotification('Error al cargar datos del usuario', 'error');
                 }
-            });
-        }
-
-        async function loadHistorialUsuario() {
-            try {
-                const solicitudesSnapshot = await db.collection('solicitudes')
-                    .where('userId', '==', currentUser.uid)
-                    .orderBy('fechaCreacion', 'desc')
-                    .get();
-                const container = document.getElementById('lista-historial-usuario');
-                container.innerHTML = '';
-                if (solicitudesSnapshot.empty) {
-                    container.innerHTML = '<p class="text-gray-500 text-center">No tienes historial de solicitudes</p>';
-                    return;
-                }
-                solicitudesSnapshot.forEach(doc => {
-                    const solicitud = doc.data();
-                    const solicitudId = doc.id;
-                    const solicitudElement = createHistorialElement(solicitud, solicitudId);
-                    container.appendChild(solicitudElement);
-                });
-            } catch (error) {
-                console.error('Error al cargar historial:', error);
-                showNotification('Error al cargar historial', 'error');
-            }
-        }
-
-        async function loadHistorialReciclador() {
-            try {
-                const solicitudesSnapshot = await db.collection('solicitudes')
-                    .where('recicladorId', '==', currentUser.uid)
-                    .orderBy('fechaCreacion', 'desc')
-                    .get();
-                const container = document.getElementById('lista-historial-reciclador');
-                container.innerHTML = '';
-                if (solicitudesSnapshot.empty) {
-                    container.innerHTML = '<p class="text-gray-500 text-center">No tienes historial de recolecciones</p>';
-                    return;
-                }
-                solicitudesSnapshot.forEach(doc => {
-                    const solicitud = doc.data();
-                    const solicitudId = doc.id;
-                    const solicitudElement = createHistorialElement(solicitud, solicitudId);
-                    container.appendChild(solicitudElement);
-                });
-            } catch (error) {
-                console.error('Error al cargar historial:', error);
-                showNotification('Error al cargar historial', 'error');
-            }
-        }
-
-        function createHistorialElement(solicitud, solicitudId) {
-            const div = document.createElement('div');
-            div.className = 'bg-white rounded-xl p-4 shadow-sm border border-gray-200';
-            const estadoColor = {
-                'pendiente': 'bg-yellow-100 text-yellow-800',
-                'asignada': 'bg-blue-100 text-blue-800',
-                'en_camino': 'bg-purple-100 text-purple-800',
-                'en_sitio': 'bg-orange-100 text-orange-800',
-                'completada': 'bg-green-100 text-green-800',
-                'cancelada': 'bg-red-100 text-red-800'
-            };
-            const tipoIcons = {
-                'PET': 'fas fa-bottle-water text-blue-500',
-                'Cartón': 'fas fa-box text-orange-500',
-                'Plástico': 'fas fa-recycle text-green-500',
-                'Papel': 'fas fa-file-alt text-gray-500'
-            };
-            const cantidad = solicitud.cantidad ? 
-                `${solicitud.cantidad.peso ? solicitud.cantidad.peso + ' kg' : ''} ${solicitud.cantidad.bolsas ? solicitud.cantidad.bolsas + ' bolsas' : ''}`.trim() : 
-                'No especificada';
-            const fechaCreacion = solicitud.fechaCreacion ? 
-                new Date(solicitud.fechaCreacion.toDate()).toLocaleDateString() : 
-                'Fecha no disponible';
-
-            let calificacionHtml = '';
-            if (solicitud.calificacion) {
-                calificacionHtml = `
-                    <div class="flex items-center text-sm text-gray-600 mb-2">
-                        <span class="mr-2">Calificación:</span>
-                        <div class="flex text-yellow-500">
-                            ${'★'.repeat(solicitud.calificacion)}${'☆'.repeat(5 - solicitud.calificacion)}
-                        </div>
-                    </div>
-                `;
-            }
-
-            let comentarioHtml = '';
-            if (solicitud.comentario) {
-                comentarioHtml = `
-                    <p class="text-sm text-gray-600 italic">"${solicitud.comentario}"</p>
-                `;
-            }
-
-            div.innerHTML = `
-                <div class="flex items-start justify-between mb-3">
-                    <div class="flex items-center">
-                        <i class="${tipoIcons[solicitud.tipoResiduo] || 'fas fa-recycle text-gray-500'} text-xl mr-3"></i>
-                        <div>
-                            <h4 class="font-semibold text-gray-800">${solicitud.tipoResiduo}</h4>
-                            <p class="text-sm text-gray-600">${cantidad}</p>
-                            <p class="text-xs text-gray-500">${fechaCreacion}</p>
-                        </div>
-                    </div>
-                    <span class="px-2 py-1 rounded-full text-xs font-medium ${estadoColor[solicitud.estado] || 'bg-gray-100 text-gray-800'}">
-                        ${solicitud.estado.charAt(0).toUpperCase() + solicitud.estado.slice(1)}
-                    </span>
-                </div>
-                <div class="text-sm text-gray-600 mb-3">
-                    <p><i class="fas fa-clock mr-1"></i> ${solicitud.tipoRecoleccion === 'inmediata' ? 'Inmediata' : 'Programada'}</p>
-                    ${solicitud.fechaProgramada ? `<p><i class="fas fa-calendar mr-1"></i> ${new Date(solicitud.fechaProgramada.toDate()).toLocaleString()}</p>` : ''}
-                </div>
-                ${calificacionHtml}
-                ${comentarioHtml}
-            `;
-            return div;
-        }
-
-        // Limpiar listeners cuando se descarga la página
-        window.addEventListener('beforeunload', () => {
-            if (currentSeguimientoUnsubscribe) {
-                currentSeguimientoUnsubscribe();
-            }
-            if (currentServicioUnsubscribe) {
-                currentServicioUnsubscribe();
+            } else {
+                currentUser = null;
+                showAuthScreen();
             }
         });
-
-        // Función para formatear fechas
-        function formatDate(timestamp) {
-            if (!timestamp) return 'Fecha no disponible';
-            const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-            return date.toLocaleDateString('es-CO', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            });
+        
+        // Formulario de login
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email-login').value.trim();
+            const password = document.getElementById('password-login').value.trim();
+            
+            // Validación
+            if (!email || !password) {
+                showNotification('Por favor, completa todos los campos', 'error');
+                return;
+            }
+            
+            if (!validateEmail(email)) {
+                showNotification('Por favor, ingresa un correo electrónico válido', 'error');
+                return;
+            }
+            
+            try {
+                await auth.signInWithEmailAndPassword(email, password);
+                showNotification('¡Inicio de sesión exitoso!', 'success');
+            } catch (error) {
+                const errorMessage = getFirebaseErrorMessage(error.code);
+                showNotification('Error al iniciar sesión: ' + errorMessage, 'error');
+                console.error('Error de autenticación:', error);
+            }
+        });
+        
+        // Formulario de registro
+        document.getElementById('signup-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const nombre = document.getElementById('nombre-register').value.trim();
+            const email = document.getElementById('email-register').value.trim();
+            const password = document.getElementById('password-register').value.trim();
+            const rol = document.getElementById('rol-register').value;
+            const organizacion = document.getElementById('organizacion-register').value.trim();
+            
+            // Validación
+            if (!nombre || !email || !password || !rol) {
+                showNotification('Por favor, completa todos los campos requeridos', 'error');
+                return;
+            }
+            
+            if (!validateEmail(email)) {
+                showNotification('Por favor, ingresa un correo electrónico válido', 'error');
+                return;
+            }
+            
+            if (password.length < 6) {
+                showNotification('La contraseña debe tener al menos 6 caracteres', 'error');
+                return;
+            }
+            
+            try {
+                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                const user = userCredential.user;
+                
+                // Crear documento del usuario en Firestore
+                await db.collection('usuarios').doc(user.uid).set({
+                    nombre: nombre,
+                    email: email,
+                    rol: rol,
+                    organizacion: organizacion || '',
+                    fechaRegistro: firebase.firestore.FieldValue.serverTimestamp(),
+                    activo: true
+                });
+                
+                showNotification('¡Registro exitoso!', 'success');
+            } catch (error) {
+                const errorMessage = getFirebaseErrorMessage(error.code);
+                showNotification('Error al registrarse: ' + errorMessage, 'error');
+                console.error('Error de registro:', error);
+            }
+        });
+        
+        // Login con Google
+        document.getElementById('login-google').addEventListener('click', async () => {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            try {
+                const result = await auth.signInWithPopup(provider);
+                const user = result.user;
+                
+                // Verificar si es usuario nuevo
+                const userDoc = await db.collection('usuarios').doc(user.uid).get();
+                if (!userDoc.exists) {
+                    // Crear documento para nuevo usuario
+                    await db.collection('usuarios').doc(user.uid).set({
+                        nombre: user.displayName,
+                        email: user.email,
+                        rol: 'usuario',
+                        organizacion: '',
+                        fechaRegistro: firebase.firestore.FieldValue.serverTimestamp(),
+                        activo: true
+                    });
+                }
+                
+                showNotification('¡Inicio de sesión exitoso!', 'success');
+            } catch (error) {
+                const errorMessage = getFirebaseErrorMessage(error.code);
+                showNotification('Error al iniciar sesión con Google: ' + errorMessage, 'error');
+                console.error('Error de autenticación con Google:', error);
+            }
+        });
+        
+        // Alternar entre login y registro
+        document.getElementById('show-register').addEventListener('click', () => {
+            document.querySelector('#auth-screen > div > div:first-child').classList.add('hidden');
+            document.getElementById('register-form').classList.remove('hidden');
+        });
+        
+        document.getElementById('show-login').addEventListener('click', () => {
+            document.getElementById('register-form').classList.add('hidden');
+            document.querySelector('#auth-screen > div > div:first-child').classList.remove('hidden');
+        });
+        
+        // Mostrar campo organización para recicladores
+        document.getElementById('rol-register').addEventListener('change', (e) => {
+            const orgField = document.getElementById('organizacion-field');
+            if (e.target.value === 'reciclador') {
+                orgField.classList.remove('hidden');
+                document.getElementById('organizacion-register').required = true;
+            } else {
+                orgField.classList.add('hidden');
+                document.getElementById('organizacion-register').required = false;
+            }
+        });
+        
+        // Logout
+        document.getElementById('logout-btn').addEventListener('click', async () => {
+            try {
+                await auth.signOut();
+                showNotification('Sesión cerrada', 'info');
+            } catch (error) {
+                showNotification('Error al cerrar sesión', 'error');
+            }
+        });
+        
+        function showAuthScreen() {
+            authScreen.classList.remove('hidden');
+            appContainer.classList.add('hidden');
         }
+        
+        function showMainApp() {
+            authScreen.classList.add('hidden');
+            appContainer.classList.remove('hidden');
+        }
+        
+        // Inicialización de la aplicación
+        document.addEventListener('DOMContentLoaded', function() {
+            // Ocultar loading después de 2 segundos
+            setTimeout(() => {
+                loadingScreen.classList.add('hidden');
+                authScreen.classList.remove('hidden');
+            }, 2000);
+        });
     </script>
 </body>
 </html>
