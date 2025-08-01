@@ -388,7 +388,7 @@
         import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, signOut } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js';
         import { getFirestore, collection, doc, getDoc, getDocs, setDoc, updateDoc, addDoc, serverTimestamp, query, where, orderBy } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js';
 
-        // Configuración de Firebase
+        // Configuración de Firebase - Confirmado desde la consola de Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyA2t_5x6x4fi0t4efDjk9OG0Gh1g95U6c0",
             authDomain: "appreciclaje-nuevo.firebaseapp.com",
@@ -400,8 +400,13 @@
 
         // Inicializar Firebase
         const app = initializeApp(firebaseConfig);
-        const auth = getAuth();
-        const db = getFirestore();
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // Configurar persistencia de autenticación
+        auth.setPersistence = 'local';
+
+        console.log('Firebase inicializado correctamente:', app.name);
 
         // Variables globales
         let currentUser = null;
@@ -421,42 +426,69 @@
             }, 2000);
         });
 
-        // Escucha de autenticación
+        // Escucha de autenticación con mejor manejo de estados
         onAuthStateChanged(auth, async (user) => {
+            console.log('Estado de autenticación cambió:', user ? 'Usuario logueado' : 'Usuario deslogueado');
+            
             if (user) {
                 currentUser = user;
-                await loadUserData();
-                showMainApp();
+                console.log('Usuario actual:', user.email);
+                
+                try {
+                    await loadUserData();
+                    showMainApp();
+                } catch (error) {
+                    console.error('Error al cargar datos del usuario:', error);
+                    showNotification('Error al cargar datos del usuario', 'error');
+                    // Continuar con datos por defecto
+                    userRole = 'usuario';
+                    document.getElementById('user-name').textContent = user.displayName || user.email || 'Usuario';
+                    showMainApp();
+                }
             } else {
+                currentUser = null;
+                userRole = null;
                 showAuthScreen();
             }
+        }, (error) => {
+            console.error('Error en onAuthStateChanged:', error);
+            showNotification('Error de autenticación', 'error');
         });
 
-        // Cargar datos del usuario
+        // Cargar datos del usuario con mejor manejo de errores
         async function loadUserData() {
             try {
+                console.log('Cargando datos del usuario:', currentUser.uid);
                 const userDoc = await getDoc(doc(db, 'usuarios', currentUser.uid));
+                
                 if (userDoc.exists()) {
                     const userData = userDoc.data();
-                    userRole = userData.rol;
-                    document.getElementById('user-name').textContent = userData.nombre;
+                    userRole = userData.rol || 'usuario';
+                    document.getElementById('user-name').textContent = userData.nombre || currentUser.displayName || currentUser.email;
+                    console.log('Datos del usuario cargados:', userData);
                 } else {
+                    console.log('Documento de usuario no existe, creando uno nuevo...');
                     // Si no existe el documento, crear uno básico
                     userRole = 'usuario';
-                    await setDoc(doc(db, 'usuarios', currentUser.uid), {
-                        nombre: currentUser.displayName || currentUser.email,
+                    const newUserData = {
+                        nombre: currentUser.displayName || currentUser.email.split('@')[0],
                         email: currentUser.email,
                         rol: 'usuario',
                         organizacion: '',
                         fechaRegistro: serverTimestamp(),
                         activo: true
-                    });
-                    document.getElementById('user-name').textContent = currentUser.displayName || currentUser.email;
+                    };
+                    
+                    await setDoc(doc(db, 'usuarios', currentUser.uid), newUserData);
+                    document.getElementById('user-name').textContent = newUserData.nombre;
+                    console.log('Nuevo documento de usuario creado');
                 }
             } catch (error) {
-                console.error('Error al cargar datos del usuario:', error);
-                showNotification('Error al cargar datos del usuario', 'error');
-                userRole = 'usuario'; // Valor por defecto
+                console.error('Error detallado al cargar datos del usuario:', error);
+                // Usar datos por defecto si hay error
+                userRole = 'usuario';
+                document.getElementById('user-name').textContent = currentUser.displayName || currentUser.email.split('@')[0] || 'Usuario';
+                throw error; // Re-throw para manejar en el onAuthStateChanged
             }
         }
 
@@ -466,16 +498,31 @@
         }
 
         function showMainApp() {
+            console.log('Mostrando aplicación principal para rol:', userRole);
             authScreen.classList.add('hidden');
             appContainer.classList.remove('hidden');
+            
             if (userRole === 'usuario') {
                 document.getElementById('usuario-module').classList.remove('hidden');
                 document.getElementById('reciclador-module').classList.add('hidden');
                 showScreen('usuario-home');
+                console.log('Módulo de usuario activado');
+                
+                // Cargar datos después de un breve delay para asegurar que el DOM esté listo
+                setTimeout(() => {
+                    loadDummyData();
+                }, 500);
+                
             } else if (userRole === 'reciclador') {
                 document.getElementById('reciclador-module').classList.remove('hidden');
                 document.getElementById('usuario-module').classList.add('hidden');
                 showScreen('reciclador-home');
+                console.log('Módulo de reciclador activado');
+                
+                // Cargar datos después de un breve delay
+                setTimeout(() => {
+                    loadDummyData();
+                }, 500);
             }
         }
 
@@ -793,51 +840,106 @@
 
         // ====================== DATOS DE PRUEBA ======================
         function loadDummyData() {
+            console.log('Cargando datos de ejemplo para rol:', userRole);
+            
             // Cargar datos de ejemplo para las solicitudes activas
             if (userRole === 'usuario') {
                 const solicitudesActivas = document.getElementById('solicitudes-activas');
-                solicitudesActivas.innerHTML = `
-                    <div class="bg-gray-50 rounded-xl p-4">
-                        <div class="flex items-center justify-between mb-2">
-                            <span class="font-medium text-gray-800">Recolección de Plástico</span>
-                            <span class="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full">En proceso</span>
+                if (solicitudesActivas) {
+                    solicitudesActivas.innerHTML = `
+                        <div class="bg-gray-50 rounded-xl p-4">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="font-medium text-gray-800">Recolección de Plástico</span>
+                                <span class="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full">En proceso</span>
+                            </div>
+                            <p class="text-sm text-gray-600">5 kg • 3 bolsas</p>
+                            <p class="text-xs text-gray-500 mt-1">Solicitado hace 30 min</p>
                         </div>
-                        <p class="text-sm text-gray-600">5 kg • 3 bolsas</p>
-                        <p class="text-xs text-gray-500 mt-1">Solicitado hace 30 min</p>
-                    </div>
-                `;
+                        <div class="bg-gray-50 rounded-xl p-4">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="font-medium text-gray-800">Recolección de Cartón</span>
+                                <span class="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">Completado</span>
+                            </div>
+                            <p class="text-sm text-gray-600">2 kg • 1 bolsa</p>
+                            <p class="text-xs text-gray-500 mt-1">Completado ayer</p>
+                        </div>
+                    `;
+                    console.log('Datos de usuario cargados');
+                }
             } else if (userRole === 'reciclador') {
                 const solicitudesDisponibles = document.getElementById('solicitudes-disponibles');
-                solicitudesDisponibles.innerHTML = `
-                    <div class="bg-gray-50 rounded-xl p-4 cursor-pointer hover:bg-gray-100 transition-colors">
-                        <div class="flex items-center justify-between mb-2">
-                            <span class="font-medium text-gray-800">Cartón</span>
-                            <span class="px-2 py-1 bg-red-100 text-red-800 text-xs rounded-full">Inmediata</span>
+                if (solicitudesDisponibles) {
+                    solicitudesDisponibles.innerHTML = `
+                        <div class="bg-gray-50 rounded-xl p-4 cursor-pointer hover:bg-gray-100 transition-colors">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="font-medium text-gray-800">Cartón</span>
+                                <span class="px-2 py-1 bg-red-100 text-red-800 text-xs rounded-full">Inmediata</span>
+                            </div>
+                            <p class="text-sm text-gray-600">8 kg • 2 bolsas</p>
+                            <p class="text-xs text-gray-500 mt-1">A 1.2 km de distancia</p>
                         </div>
-                        <p class="text-sm text-gray-600">8 kg • 2 bolsas</p>
-                        <p class="text-xs text-gray-500 mt-1">A 1.2 km de distancia</p>
-                    </div>
-                    <div class="bg-gray-50 rounded-xl p-4 cursor-pointer hover:bg-gray-100 transition-colors">
-                        <div class="flex items-center justify-between mb-2">
-                            <span class="font-medium text-gray-800">PET</span>
-                            <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">Programada</span>
+                        <div class="bg-gray-50 rounded-xl p-4 cursor-pointer hover:bg-gray-100 transition-colors">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="font-medium text-gray-800">PET</span>
+                                <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">Programada</span>
+                            </div>
+                            <p class="text-sm text-gray-600">3 kg • 5 bolsas</p>
+                            <p class="text-xs text-gray-500 mt-1">Mañana 10:00 AM • 0.8 km</p>
                         </div>
-                        <p class="text-sm text-gray-600">3 kg • 5 bolsas</p>
-                        <p class="text-xs text-gray-500 mt-1">Mañana 10:00 AM • 0.8 km</p>
-                    </div>
-                `;
+                        <div class="bg-gray-50 rounded-xl p-4 cursor-pointer hover:bg-gray-100 transition-colors">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="font-medium text-gray-800">Papel</span>
+                                <span class="px-2 py-1 bg-red-100 text-red-800 text-xs rounded-full">Inmediata</span>
+                            </div>
+                            <p class="text-sm text-gray-600">4 kg • 2 bolsas</p>
+                            <p class="text-xs text-gray-500 mt-1">A 0.5 km de distancia</p>
+                        </div>
+                    `;
+                    console.log('Datos de reciclador cargados');
+                }
             }
         }
 
-        // Cargar datos de ejemplo cuando se muestre la app principal
+        // ====================== FUNCIONES ADICIONALES ======================
+        
+        // Función para manejar errores de red
+        function handleNetworkError(error) {
+            console.error('Error de red:', error);
+            if (navigator.onLine) {
+                showNotification('Error de conexión con el servidor', 'error');
+            } else {
+                showNotification('Sin conexión a internet', 'error');
+            }
+        }
+        
+        // Verificar estado de la conexión
+        window.addEventListener('online', () => {
+            showNotification('Conexión restaurada', 'success');
+        });
+        
+        window.addEventListener('offline', () => {
+            showNotification('Sin conexión a internet', 'warning');
+        });
+
+        // ====================== INICIALIZACIÓN FINAL ======================
+        
+        // Verificar que Firebase esté correctamente inicializado
         setTimeout(() => {
-            if (currentUser && userRole) {
-                loadDummyData();
+            if (app && auth && db) {
+                console.log('✅ ReciclApp inicializado correctamente');
+                console.log('📱 Aplicación lista para usar');
+            } else {
+                console.error('❌ Error en la inicialización de Firebase');
+                showNotification('Error de inicialización', 'error');
             }
         }, 1000);
 
-        // ====================== INICIALIZACIÓN FINAL ======================
-        console.log('ReciclApp cargado correctamente');
+        // Log para debugging
+        console.log('🔄 Cargando ReciclApp...');
+        console.log('🔑 Firebase Config:', {
+            projectId: firebaseConfig.projectId,
+            authDomain: firebaseConfig.authDomain
+        });
     </script>
 </body>
 </html>
