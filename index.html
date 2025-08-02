@@ -481,15 +481,15 @@
         import { getFirestore, collection, doc, getDoc, getDocs, setDoc, updateDoc, query, where, orderBy } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js';
         import { getStorage, ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js';
 
-        // Configuración de Firebase
-        const firebaseConfig = {
-            apiKey: "AIzaSyA2t_5x6x4fi0t4efDjk9OG0Gh1g95U6c0",
-            authDomain: "appreciclaje-nuevo.firebaseapp.com",
-            projectId: "appreciclaje-nuevo",
-            storageBucket: "appreciclaje-nuevo.firebasestorage.app",
-            messagingSenderId: "1004737179039",
-            appId: "1:1004737179039:web:523003623daaced71c61aa"
-        };
+       const firebaseConfig = {
+    apiKey: "AIzaSyA2t_5x6x4fi0t4efDjk9OG0Gh1g95U6c0",
+    authDomain: "appreciclaje-nuevo.firebaseapp.com",
+    projectId: "appreciclaje-nuevo",
+    storageBucket: "appreciclaje-nuevo.appspot.com",
+    messagingSenderId: "1004737179039",
+    appId: "1:1004737179039:web:appId:1:1004737179039: web:523003623daaced71c61aa"
+ // Este lo obtienes de Firebase Console
+};
 
         // Inicializar Firebase
         const app = initializeApp(firebaseConfig);
@@ -531,6 +531,7 @@
                 script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyAJggKw5gGU26-YvgjKZct32wKgIKI0TJI&libraries=places,geometry&callback=googleMapsCallback`;
                 script.async = true;
                 script.defer = true;
+                script.onerror = reject;
                 window.googleMapsCallback = () => resolve();
                 document.head.appendChild(script);
             });
