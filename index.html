@@ -439,47 +439,11 @@
         </div>
     </div>
 
-    <!-- Modal de Calificación -->
-    <div id="modal-calificacion" class="hidden fixed inset-0 bg-black bg-opacity-50 modal-overlay z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl p-6 w-full max-w-md slide-up">
-            <h3 class="text-xl font-bold text-gray-800 mb-4">Calificar Servicio</h3>
-            <form id="formCalificacion">
-                <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-semibold mb-3">Calificación</label>
-                    <div class="flex justify-center space-x-2">
-                        <button type="button" class="star-btn text-2xl text-gray-300 hover:text-yellow-500 transition-colors" data-rating="1">★</button>
-                        <button type="button" class="star-btn text-2xl text-gray-300 hover:text-yellow-500 transition-colors" data-rating="2">★</button>
-                        <button type="button" class="star-btn text-2xl text-gray-300 hover:text-yellow-500 transition-colors" data-rating="3">★</button>
-                        <button type="button" class="star-btn text-2xl text-gray-300 hover:text-yellow-500 transition-colors" data-rating="4">★</button>
-                        <button type="button" class="star-btn text-2xl text-gray-300 hover:text-yellow-500 transition-colors" data-rating="5">★</button>
-                    </div>
-                </div>
-                <div class="mb-6">
-                    <label class="block text-gray-700 text-sm font-semibold mb-2">Comentario (Opcional)</label>
-                    <textarea id="comentario-calificacion" rows="3" 
-                              class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                              placeholder="Comparte tu experiencia..."></textarea>
-                </div>
-                <div class="flex space-x-3">
-                    <button type="button" id="cancelar-calificacion" 
-                            class="flex-1 bg-gray-300 text-gray-700 py-3 rounded-xl font-semibold hover:bg-gray-400 transition-colors">
-                        Cancelar
-                    </button>
-                    <button type="submit" 
-                            class="flex-1 bg-green-600 text-white py-3 rounded-xl font-semibold hover:bg-green-700 transition-colors">
-                        Enviar
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
     <script type="module">
         // Importar Firebase modular SDK
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js';
         import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithRedirect, GoogleAuthProvider, signOut, getRedirectResult } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js';
-        import { getFirestore, collection, doc, getDoc, getDocs, setDoc, updateDoc, query, where, orderBy, serverTimestamp } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js';
-        import { getStorage, ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js';
+        import { getFirestore, collection, doc, getDoc, setDoc } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js';
 
         const firebaseConfig = {
             apiKey: "AIzaSyA2t_5x6x4fi0t4efDjk9OG0Gh1g95U6c0",
@@ -494,19 +458,10 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth();
         const db = getFirestore();
-        const storage = getStorage();
 
         // Variables globales
         let currentUser = null;
         let userRole = null;
-        let map = null;
-        let marker = null;
-        let selectedLocation = null;
-        let recicladorMap = null;
-        let followingMap = null;
-        let currentSeguimientoUnsubscribe = null;
-        let currentServicioUnsubscribe = null;
-        let currentSolicitudId = null;
 
         // Elementos del DOM
         const loadingScreen = document.getElementById('loading-screen');
@@ -521,22 +476,8 @@
                 authScreen.classList.remove('hidden');
             }, 2000);
 
-            loadGoogleMapsAPI();
             checkRedirectResult();
         });
-
-        // Cargar Google Maps con nueva API Key
-        function loadGoogleMapsAPI() {
-            return new Promise((resolve, reject) => {
-                const script = document.createElement('script');
-                script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyAJggKw5gGU26-YvgjKZct32wKgIKI0TJI&libraries=places,geometry&callback=googleMapsCallback`;
-                script.async = true;
-                script.defer = true;
-                script.onerror = reject;
-                window.googleMapsCallback = () => resolve();
-                document.head.appendChild(script);
-            });
-        }
 
         // Manejar resultado de redirección
         async function checkRedirectResult() {
@@ -571,11 +512,11 @@
                 if (userDoc.exists()) {
                     const userData = userDoc.data();
                     userRole = userData.rol || 'usuario'; // Asignar rol por defecto si no existe
-                    document.getElementById('user-name').textContent = userData.nombre || userData.email;
+                    document.getElementById('user-name').textContent = userData.nombre || userData.email || currentUser.email;
+                    console.log('Datos del usuario cargados:', userData);
                 } else {
                     await handleNewUser(currentUser);
                 }
-                console.log('Datos del usuario cargados:', userData);
             } catch (error) {
                 console.error('Error al cargar datos del usuario:', error);
                 showNotification('Error al cargar datos del usuario', 'error');
@@ -589,8 +530,7 @@
                 nombre: user.displayName || user.email,
                 email: user.email,
                 rol: defaultRole,
-                organizacion: '',
-                fechaRegistro: serverTimestamp(),
+                fechaRegistro: new Date(),
                 activo: true,
                 photoURL: user.photoURL || ''
             });
@@ -601,8 +541,6 @@
         function showAuthScreen() {
             authScreen.classList.remove('hidden');
             appContainer.classList.add('hidden');
-            if (currentSeguimientoUnsubscribe) currentSeguimientoUnsubscribe();
-            if (currentServicioUnsubscribe) currentServicioUnsubscribe();
         }
 
         function showMainApp() {
@@ -616,11 +554,9 @@
             if (userRole === 'usuario') {
                 document.getElementById('usuario-module').classList.remove('hidden');
                 document.getElementById('reciclador-module').classList.add('hidden');
-                loadSolicitudesActivas();
             } else if (userRole === 'reciclador') {
                 document.getElementById('reciclador-module').classList.remove('hidden');
                 document.getElementById('usuario-module').classList.add('hidden');
-                loadSolicitudesDisponibles();
             }
         }
 
@@ -643,7 +579,6 @@
             const email = document.getElementById('email-register').value;
             const password = document.getElementById('password-register').value;
             const rol = document.getElementById('rol-register').value;
-            const organizacion = document.getElementById('organizacion-register').value || '';
 
             if (!nombre || !email || !password || !rol) {
                 showNotification('Completa todos los campos', 'error');
@@ -654,8 +589,8 @@
                 const userCredential = await createUserWithEmailAndPassword(auth, email, password);
                 const user = userCredential.user;
                 await setDoc(doc(db, 'usuarios', user.uid), {
-                    nombre, email, rol, organizacion,
-                    fechaRegistro: serverTimestamp(),
+                    nombre, email, rol,
+                    fechaRegistro: new Date(),
                     activo: true
                 });
                 userRole = rol;
@@ -686,18 +621,6 @@
             document.querySelector('#auth-screen > div > div:first-child').classList.remove('hidden');
         });
 
-        // Campo de organización
-        document.getElementById('rol-register').addEventListener('change', (e) => {
-            const orgField = document.getElementById('organizacion-field');
-            if (e.target.value === 'reciclador') {
-                orgField.classList.remove('hidden');
-                document.getElementById('organizacion-register').required = true;
-            } else {
-                orgField.classList.add('hidden');
-                document.getElementById('organizacion-register').required = false;
-            }
-        });
-
         // Logout
         document.getElementById('logout-btn').addEventListener('click', async () => {
             try {
@@ -708,251 +631,7 @@
             }
         });
 
-        // ====================== UI Y NAVEGACIÓN ======================
-        function showScreen(screenId) {
-            document.querySelectorAll('[id$="-home"], [id^="nueva-"], [id^="historial-"], [id^="mapa-"], [id^="seguimiento-"], [id^="servicio-"]').forEach(el => el.classList.add('hidden'));
-            document.getElementById(screenId).classList.remove('hidden');
-        }
-
-        document.getElementById('nueva-solicitud-btn').addEventListener('click', () => {
-            showScreen('nueva-solicitud');
-            initializeUserMap();
-        });
-        document.getElementById('historial-usuario-btn').addEventListener('click', () => {
-            showScreen('historial-usuario');
-            loadHistorialUsuario();
-        });
-        document.getElementById('back-to-home').addEventListener('click', () => {
-            showScreen('usuario-home');
-            if (currentSeguimientoUnsubscribe) currentSeguimientoUnsubscribe();
-            loadSolicitudesActivas();
-        });
-        document.getElementById('back-historial-usuario').addEventListener('click', () => {
-            showScreen('usuario-home');
-        });
-
-        document.getElementById('mapa-solicitudes-btn').addEventListener('click', () => {
-            showScreen('mapa-solicitudes');
-            initializeRecicladorMap();
-        });
-        document.getElementById('historial-reciclador-btn').addEventListener('click', () => {
-            showScreen('historial-reciclador');
-            loadHistorialReciclador();
-        });
-        document.getElementById('back-mapa-solicitudes').addEventListener('click', () => {
-            showScreen('reciclador-home');
-        });
-        document.getElementById('back-historial-reciclador').addEventListener('click', () => {
-            showScreen('reciclador-home');
-        });
-
-        // ====================== MAPAS ======================
-        function initializeUserMap() {
-            if (typeof google === 'undefined') return setTimeout(initializeUserMap, 500);
-            const mapEl = document.getElementById('map-usuario');
-            const bogota = { lat: 4.7110, lng: -74.0721 };
-            map = new google.maps.Map(mapEl, { zoom: 13, center: bogota });
-
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(pos => {
-                    const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-                    map.setCenter(loc);
-                    selectedLocation = loc;
-                    marker = new google.maps.Marker({ position: loc, map, draggable: true });
-                    marker.addListener('dragend', () => selectedLocation = { lat: marker.getPosition().lat(), lng: marker.getPosition().lng() });
-                });
-            }
-
-            map.addListener('click', e => {
-                selectedLocation = { lat: e.latLng.lat(), lng: e.latLng.lng() };
-                if (marker) marker.setPosition(selectedLocation);
-                else marker = new google.maps.Marker({ position: selectedLocation, map, draggable: true });
-            });
-        }
-
-        function initializeRecicladorMap() {
-            if (typeof google === 'undefined') return setTimeout(initializeRecicladorMap, 500);
-            const mapEl = document.getElementById('map-reciclador');
-            const bogota = { lat: 4.7110, lng: -74.0721 };
-            recicladorMap = new google.maps.Map(mapEl, { zoom: 12, center: bogota });
-
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(pos => {
-                    new google.maps.Marker({
-                        position: { lat: pos.coords.latitude, lng: pos.coords.longitude },
-                        map: recicladorMap,
-                        icon: { url: 'image/svg+xml;charset=UTF-8,%3Csvg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20"%3E%3Ccircle cx="10" cy="10" r="8" fill="%2310b981"/%3E%3C/svg%3E', scaledSize: new google.maps.Size(20,20) }
-                    });
-                    recicladorMap.setCenter({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-                });
-            }
-            loadSolicitudesEnMapa();
-        }
-
-        async function loadSolicitudesEnMapa() {
-            try {
-                const q = query(collection(db, 'solicitudes'), where('estado', '==', 'pendiente'));
-                const snapshot = await getDocs(q);
-                snapshot.forEach(doc => {
-                    const data = doc.data();
-                    if (data.ubicacion) {
-                        const marker = new google.maps.Marker({
-                            position: data.ubicacion,
-                            map: recicladorMap,
-                            icon: { url: data.tipoRecoleccion === 'inmediata' ? 'image/svg+xml;charset=UTF-8,%3Csvg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20"%3E%3Ccircle cx="10" cy="10" r="8" fill="%23ef4444"/%3E%3C/svg%3E' : 'image/svg+xml;charset=UTF-8,%3Csvg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20"%3E%3Ccircle cx="10" cy="10" r="8" fill="%233b82f6"/%3E%3C/svg%3E', scaledSize: new google.maps.Size(20,20) }
-                        });
-                        const infoWindow = new google.maps.InfoWindow({
-                            content: `<div class="p-2"><h4 class="font-bold">${data.tipoResiduo}</h4><p>Cantidad: ${data.cantidad?.peso || ''} ${data.cantidad?.bolsas || ''}</p><button onclick="aceptarSolicitud('${doc.id}')" class="mt-2 bg-green-500 text-white px-3 py-1 rounded text-sm">Aceptar</button></div>`
-                        });
-                        marker.addListener('click', () => infoWindow.open(recicladorMap, marker));
-                    }
-                });
-            } catch (e) { console.error(e); }
-        }
-
-        window.aceptarSolicitud = async (solicitudId) => {
-            try {
-                await updateDoc(doc(db, 'solicitudes', solicitudId), {
-                    estado: 'asignada',
-                    recicladorId: currentUser.uid
-                });
-                showNotification('Solicitud aceptada', 'success');
-                loadSolicitudesDisponibles();
-            } catch (e) {
-                console.error(e);
-                showNotification('Error al aceptar solicitud', 'error');
-            }
-        };
-
-        // ====================== SOLICITUDES ======================
-        document.getElementById('formSolicitud').addEventListener('submit', handleSolicitudSubmit);
-        document.querySelectorAll('input[name="tipoRecoleccion"]').forEach(radio => {
-            radio.addEventListener('change', (e) => {
-                document.getElementById('programacion-fields').classList.toggle('hidden', e.target.value !== 'programada');
-            });
-        });
-
-        async function handleSolicitudSubmit(e) {
-            e.preventDefault();
-            if (!selectedLocation) return showNotification('Selecciona una ubicación', 'error');
-            const tipoResiduo = document.querySelector('input[name="tipoResiduo"]:checked')?.value;
-            const tipoRecoleccion = document.querySelector('input[name="tipoRecoleccion"]:checked')?.value;
-            const peso = document.getElementById('cantidad-peso').value;
-            const bolsas = document.getElementById('cantidad-bolsas').value;
-            if (!tipoResiduo || !tipoRecoleccion) return showNotification('Completa todos los campos', 'error');
-
-            try {
-                const data = {
-                    userId: currentUser.uid,
-                    tipoResiduo,
-                    tipoRecoleccion,
-                    cantidad: { peso: peso || null, bolsas: bolsas || null },
-                    ubicacion: selectedLocation,
-                    estado: 'pendiente',
-                    fechaCreacion: serverTimestamp(),
-                    recicladorId: null
-                };
-
-                if (tipoRecoleccion === 'programada') {
-                    const fecha = document.getElementById('fecha-programada').value;
-                    const hora = document.getElementById('hora-programada').value;
-                    if (!fecha || !hora) return showNotification('Selecciona fecha y hora', 'error');
-                    data.fechaProgramada = new Date(`${fecha}T${hora}`);
-                }
-
-                const file = document.getElementById('fotoResiduo').files[0];
-                if (file) {
-                    const filePath = `solicitudes/${currentUser.uid}/${Date.now()}_${file.name}`;
-                    const fileRef = ref(storage, filePath);
-                    const snapshot = await uploadBytes(fileRef, file);
-                    data.fotoURL = await getDownloadURL(snapshot.ref);
-                }
-
-                await setDoc(doc(collection(db, 'solicitudes')), data);
-                showNotification('¡Solicitud enviada!', 'success');
-                document.getElementById('formSolicitud').reset();
-                selectedLocation = null;
-                if (marker) marker.setMap(null);
-                showScreen('usuario-home');
-                loadSolicitudesActivas();
-            } catch (e) {
-                console.error(e);
-                showNotification('Error al enviar solicitud', 'error');
-            }
-        }
-
-        async function loadSolicitudesActivas() {
-            const solicitudesActivas = document.getElementById('solicitudes-activas');
-            solicitudesActivas.innerHTML = '';
-            try {
-                const q = query(collection(db, 'solicitudes'), where('userId', '==', currentUser.uid), where('estado', 'in', ['pendiente', 'asignada']));
-                const snapshot = await getDocs(q);
-                snapshot.forEach(doc => {
-                    const data = doc.data();
-                    const div = document.createElement('div');
-                    div.className = 'bg-gray-50 p-3 rounded-xl';
-                    div.innerHTML = `<p><strong>Tipo:</strong> ${data.tipoResiduo}</p><p><strong>Estado:</strong> ${data.estado}</p>`;
-                    solicitudesActivas.appendChild(div);
-                });
-            } catch (e) {
-                console.error(e);
-            }
-        }
-
-        async function loadSolicitudesDisponibles() {
-            const solicitudesDisponibles = document.getElementById('solicitudes-disponibles');
-            solicitudesDisponibles.innerHTML = '';
-            try {
-                const q = query(collection(db, 'solicitudes'), where('estado', '==', 'pendiente'));
-                const snapshot = await getDocs(q);
-                snapshot.forEach(doc => {
-                    const data = doc.data();
-                    const div = document.createElement('div');
-                    div.className = 'bg-gray-50 p-3 rounded-xl';
-                    div.innerHTML = `<p><strong>Tipo:</strong> ${data.tipoResiduo}</p><button onclick="aceptarSolicitud('${doc.id}')" class="mt-2 bg-green-500 text-white px-3 py-1 rounded text-sm">Aceptar</button>`;
-                    solicitudesDisponibles.appendChild(div);
-                });
-            } catch (e) {
-                console.error(e);
-            }
-        }
-
-        async function loadHistorialUsuario() {
-            const historial = document.getElementById('lista-historial-usuario');
-            historial.innerHTML = '';
-            try {
-                const q = query(collection(db, 'solicitudes'), where('userId', '==', currentUser.uid), where('estado', '==', 'completada'), orderBy('fechaCreacion', 'desc'));
-                const snapshot = await getDocs(q);
-                snapshot.forEach(doc => {
-                    const data = doc.data();
-                    const div = document.createElement('div');
-                    div.className = 'bg-gray-50 p-3 rounded-xl';
-                    div.innerHTML = `<p><strong>Tipo:</strong> ${data.tipoResiduo}</p><p><strong>Fecha:</strong> ${data.fechaCreacion?.toDate().toLocaleDateString()}</p>`;
-                    historial.appendChild(div);
-                });
-            } catch (e) {
-                console.error(e);
-            }
-        }
-
-        async function loadHistorialReciclador() {
-            const historial = document.getElementById('lista-historial-reciclador');
-            historial.innerHTML = '';
-            try {
-                const q = query(collection(db, 'solicitudes'), where('recicladorId', '==', currentUser.uid), where('estado', '==', 'completada'), orderBy('fechaCreacion', 'desc'));
-                const snapshot = await getDocs(q);
-                snapshot.forEach(doc => {
-                    const data = doc.data();
-                    const div = document.createElement('div');
-                    div.className = 'bg-gray-50 p-3 rounded-xl';
-                    div.innerHTML = `<p><strong>Tipo:</strong> ${data.tipoResiduo}</p><p><strong>Fecha:</strong> ${data.fechaCreacion?.toDate().toLocaleDateString()}</p>`;
-                    historial.appendChild(div);
-                });
-            } catch (e) {
-                console.error(e);
-            }
-        }
-
+        // ====================== NOTIFICACIONES ======================
         function showNotification(msg, type = 'info') {
             const notif = document.createElement('div');
             notif.className = `fixed top-4 right-4 z-50 px-6 py-3 rounded-lg shadow-lg text-white font-medium transform translate-x-full bg-${type === 'success' ? 'green' : type === 'error' ? 'red' : 'blue'}-500`;
