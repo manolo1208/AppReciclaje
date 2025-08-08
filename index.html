@@ -62,7 +62,7 @@
                 <button id="login-google" 
                         class="w-full bg-red-500 text-white py-3 rounded-xl font-semibold hover:bg-red-600 transition-colors flex items-center justify-center">
                     <i class="fab fa-google mr-2"></i>
-                    Continuar con Google
+                    <span id="google-btn-text">Continuar con Google</span>
                 </button>
                 <div class="mt-6 text-center">
                     <button id="show-register" class="text-green-600 font-semibold hover:underline">
@@ -332,7 +332,7 @@
     <script type="module">
         // Importar Firebase modular SDK con TODOS los módulos necesarios
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js';
-        import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, signOut } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js';
+        import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, signInWithRedirect, getRedirectResult, GoogleAuthProvider, signOut } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js';
         import { getFirestore, collection, doc, getDoc, getDocs, setDoc, updateDoc, addDoc, query, where, orderBy, serverTimestamp } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js';
         import { getStorage, ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js';
 
@@ -364,9 +364,21 @@
         const authScreen = document.getElementById('auth-screen');
         const appContainer = document.getElementById('app-container');
 
-        // Inicialización mejorada
+        // Inicialización mejorada con manejo de redirect result
         document.addEventListener('DOMContentLoaded', async () => {
             console.log('DOM cargado, iniciando aplicación...');
+            
+            // Verificar si hay un resultado de redirect de Google
+            try {
+                const result = await getRedirectResult(auth);
+                if (result) {
+                    console.log('Usuario autenticado vía redirect:', result.user.uid);
+                    await handleGoogleAuthResult(result);
+                }
+            } catch (error) {
+                console.error('Error procesando redirect result:', error);
+                showNotification('Error en la autenticación', 'error');
+            }
             
             setTimeout(() => {
                 loadingScreen.classList.add('hidden');
@@ -384,20 +396,50 @@
             }
         });
 
-        // Cargar Google Maps API
+        // Cargar Google Maps API con mejor manejo de errores
         function loadGoogleMapsAPI() {
             return new Promise((resolve, reject) => {
                 if (window.google && window.google.maps) {
                     resolve();
                     return;
                 }
+                
+                // Verificar si ya hay un script cargándose
+                if (document.querySelector('script[src*="maps.googleapis.com"]')) {
+                    // Esperar a que se cargue
+                    const checkGoogleMaps = setInterval(() => {
+                        if (window.google && window.google.maps) {
+                            clearInterval(checkGoogleMaps);
+                            resolve();
+                        }
+                    }, 100);
+                    
+                    setTimeout(() => {
+                        clearInterval(checkGoogleMaps);
+                        reject(new Error('Timeout loading Google Maps'));
+                    }, 10000);
+                    return;
+                }
+                
                 const script = document.createElement('script');
                 script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyAJggKw5gGU26-YvgjKZct32wKgIKI0TJI&libraries=places,geometry&callback=googleMapsCallback`;
                 script.async = true;
                 script.defer = true;
-                script.onerror = reject;
-                window.googleMapsCallback = () => resolve();
+                script.onerror = () => reject(new Error('Failed to load Google Maps API'));
+                
+                window.googleMapsCallback = () => {
+                    delete window.googleMapsCallback;
+                    resolve();
+                };
+                
                 document.head.appendChild(script);
+                
+                // Timeout de seguridad
+                setTimeout(() => {
+                    if (!window.google || !window.google.maps) {
+                        reject(new Error('Google Maps API load timeout'));
+                    }
+                }, 15000);
             });
         }
 
@@ -616,19 +658,12 @@
             }
         });
 
-        document.getElementById('login-google').addEventListener('click', async () => {
-            const provider = new GoogleAuthProvider();
-            // Configuraciones adicionales para evitar problemas de popup
-            provider.setCustomParameters({
-                prompt: 'select_account'
-            });
+        // Función para manejar resultado de autenticación con Google
+        async function handleGoogleAuthResult(result) {
+            const user = result.user;
+            console.log('Procesando usuario de Google:', user.uid);
             
             try {
-                console.log('Iniciando login con Google...');
-                const result = await signInWithPopup(auth, provider);
-                const user = result.user;
-                console.log('Login con Google exitoso:', user.uid);
-                
                 // Verificar si el usuario ya existe
                 const userDoc = await getDoc(doc(db, 'usuarios', user.uid));
                 if (!userDoc.exists()) {
@@ -651,13 +686,79 @@
                 
                 showNotification('¡Bienvenido!', 'success');
             } catch (error) {
+                console.error('Error procesando usuario de Google:', error);
+                showNotification('Error procesando datos del usuario', 'error');
+            }
+        }
+
+        document.getElementById('login-google').addEventListener('click', async () => {
+            const provider = new GoogleAuthProvider();
+            provider.setCustomParameters({
+                prompt: 'select_account'
+            });
+            
+            // Detectar si estamos en un entorno que soporta popups
+            const isPopupSupported = () => {
+                try {
+                    return window.location.protocol === 'https:' || window.location.hostname === 'localhost';
+                } catch {
+                    return false;
+                }
+            };
+
+            try {
+                console.log('Iniciando login con Google...');
+                
+                if (isPopupSupported()) {
+                    // Intentar popup primero
+                    try {
+                        console.log('Intentando login con popup...');
+                        const result = await signInWithPopup(auth, provider);
+                        console.log('Login con popup exitoso:', result.user.uid);
+                        await handleGoogleAuthResult(result);
+                    } catch (popupError) {
+                        console.log('Error con popup, intentando redirect...');
+                        if (popupError.code === 'auth/popup-blocked' || 
+                            popupError.code === 'auth/popup-closed-by-user' ||
+                            popupError.message.includes('popup')) {
+                            // Usar redirect como fallback
+                            console.log('Usando redirect como alternativa...');
+                            await signInWithRedirect(auth, provider);
+                        } else {
+                            throw popupError;
+                        }
+                    }
+                } else {
+                    // Usar redirect directamente
+                    console.log('Usando redirect para login...');
+                    await signInWithRedirect(auth, provider);
+                }
+                
+            } catch (error) {
                 console.error('Error con Google:', error);
                 let errorMessage = 'Error al iniciar sesión con Google';
-                if (error.code === 'auth/popup-closed-by-user') {
-                    errorMessage = 'Login cancelado por el usuario';
-                } else if (error.code === 'auth/popup-blocked') {
-                    errorMessage = 'Popup bloqueado por el navegador';
+                
+                switch (error.code) {
+                    case 'auth/popup-closed-by-user':
+                        errorMessage = 'Login cancelado por el usuario';
+                        break;
+                    case 'auth/popup-blocked':
+                        errorMessage = 'Popup bloqueado. Intentando método alternativo...';
+                        // Intentar redirect
+                        try {
+                            await signInWithRedirect(auth, provider);
+                            return; // No mostrar error si redirect funciona
+                        } catch (redirectError) {
+                            errorMessage = 'Error al redirigir para autenticación';
+                        }
+                        break;
+                    case 'auth/cancelled-popup-request':
+                        errorMessage = 'Solicitud de popup cancelada';
+                        break;
+                    default:
+                        errorMessage = `Error: ${error.message}`;
                 }
+                
                 showNotification(errorMessage, 'error');
             }
         });
