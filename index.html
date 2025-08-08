@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+  }<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -63,6 +63,9 @@
                         class="w-full bg-red-500 text-white py-3 rounded-xl font-semibold hover:bg-red-600 transition-colors flex items-center justify-center">
                     <i class="fab fa-google mr-2"></i>
                     <span id="google-btn-text">Continuar con Google</span>
+                    <div id="google-loading" class="hidden ml-2">
+                        <div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    </div>
                 </button>
                 <div class="mt-6 text-center">
                     <button id="show-register" class="text-green-600 font-semibold hover:underline">
@@ -330,9 +333,9 @@
     </div>
 
     <script type="module">
-        // Importar Firebase modular SDK con TODOS los módulos necesarios
+        // Importar Firebase modular SDK - SOLO REDIRECT, NO POPUP
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js';
-        import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, signInWithRedirect, getRedirectResult, GoogleAuthProvider, signOut } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js';
+        import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithRedirect, getRedirectResult, GoogleAuthProvider, signOut } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js';
         import { getFirestore, collection, doc, getDoc, getDocs, setDoc, updateDoc, addDoc, query, where, orderBy, serverTimestamp } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js';
         import { getStorage, ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js';
 
@@ -364,26 +367,38 @@
         const authScreen = document.getElementById('auth-screen');
         const appContainer = document.getElementById('app-container');
 
-        // Inicialización mejorada con manejo de redirect result
+        // Inicialización con manejo SOLO de redirect result para Google
         document.addEventListener('DOMContentLoaded', async () => {
             console.log('DOM cargado, iniciando aplicación...');
             
+            // Mostrar loading mientras verificamos redirect
+            loadingScreen.classList.remove('hidden');
+            
             // Verificar si hay un resultado de redirect de Google
             try {
+                console.log('Verificando redirect result...');
                 const result = await getRedirectResult(auth);
-                if (result) {
+                
+                if (result && result.user) {
                     console.log('Usuario autenticado vía redirect:', result.user.uid);
+                    // El onAuthStateChanged se encargará del resto
                     await handleGoogleAuthResult(result);
+                } else {
+                    console.log('No hay redirect result');
                 }
             } catch (error) {
                 console.error('Error procesando redirect result:', error);
                 showNotification('Error en la autenticación', 'error');
             }
             
+            // Mostrar pantalla de auth después de verificar redirect
             setTimeout(() => {
                 loadingScreen.classList.add('hidden');
-                authScreen.classList.remove('hidden');
-                console.log('Pantalla de autenticación mostrada');
+                // Solo mostrar auth screen si no hay usuario autenticado
+                if (!currentUser) {
+                    authScreen.classList.remove('hidden');
+                    console.log('Pantalla de autenticación mostrada');
+                }
             }, 2000);
 
             // Cargar Google Maps con manejo de errores
@@ -658,102 +673,53 @@
             }
         });
 
-        // Función para manejar resultado de autenticación con Google
-        async function handleGoogleAuthResult(result) {
-            const user = result.user;
-            console.log('Procesando usuario de Google:', user.uid);
-            
-            try {
-                // Verificar si el usuario ya existe
-                const userDoc = await getDoc(doc(db, 'usuarios', user.uid));
-                if (!userDoc.exists()) {
-                    console.log('Usuario nuevo con Google, creando perfil...');
-                    // Crear usuario nuevo con Google
-                    const newUserData = {
-                        nombre: user.displayName || 'Usuario Google',
-                        email: user.email,
-                        rol: 'usuario',
-                        organizacion: '',
-                        fechaRegistro: serverTimestamp(),
-                        activo: true
-                    };
-                    
-                    await setDoc(doc(db, 'usuarios', user.uid), newUserData);
-                    console.log('Perfil de usuario creado exitosamente');
-                } else {
-                    console.log('Usuario existente con Google');
-                }
-                
-                showNotification('¡Bienvenido!', 'success');
-            } catch (error) {
-                console.error('Error procesando usuario de Google:', error);
-                showNotification('Error procesando datos del usuario', 'error');
-            }
-        }
-
         document.getElementById('login-google').addEventListener('click', async () => {
             const provider = new GoogleAuthProvider();
             provider.setCustomParameters({
                 prompt: 'select_account'
             });
             
-            // Detectar si estamos en un entorno que soporta popups
-            const isPopupSupported = () => {
-                try {
-                    return window.location.protocol === 'https:' || window.location.hostname === 'localhost';
-                } catch {
-                    return false;
-                }
-            };
-
             try {
-                console.log('Iniciando login con Google...');
+                console.log('Iniciando login con Google via redirect...');
                 
-                if (isPopupSupported()) {
-                    // Intentar popup primero
-                    try {
-                        console.log('Intentando login con popup...');
-                        const result = await signInWithPopup(auth, provider);
-                        console.log('Login con popup exitoso:', result.user.uid);
-                        await handleGoogleAuthResult(result);
-                    } catch (popupError) {
-                        console.log('Error con popup, intentando redirect...');
-                        if (popupError.code === 'auth/popup-blocked' || 
-                            popupError.code === 'auth/popup-closed-by-user' ||
-                            popupError.message.includes('popup')) {
-                            // Usar redirect como fallback
-                            console.log('Usando redirect como alternativa...');
-                            await signInWithRedirect(auth, provider);
-                        } else {
-                            throw popupError;
-                        }
-                    }
-                } else {
-                    // Usar redirect directamente
-                    console.log('Usando redirect para login...');
-                    await signInWithRedirect(auth, provider);
-                }
+                // Mostrar estado de carga en el botón
+                const btn = document.getElementById('login-google');
+                const btnText = document.getElementById('google-btn-text');
+                const loading = document.getElementById('google-loading');
+                
+                btn.disabled = true;
+                btnText.textContent = 'Redirigiendo...';
+                loading.classList.remove('hidden');
+                
+                // Usar SOLO redirect para evitar problemas de CORS completamente
+                await signInWithRedirect(auth, provider);
+                
+                // Nota: el código después de signInWithRedirect no se ejecutará
+                // porque la página se redirigirá a Google
                 
             } catch (error) {
-                console.error('Error con Google:', error);
+                console.error('Error con Google redirect:', error);
+                
+                // Restaurar estado del botón
+                const btn = document.getElementById('login-google');
+                const btnText = document.getElementById('google-btn-text');
+                const loading = document.getElementById('google-loading');
+                
+                btn.disabled = false;
+                btnText.textContent = 'Continuar con Google';
+                loading.classList.add('hidden');
+                
                 let errorMessage = 'Error al iniciar sesión con Google';
                 
                 switch (error.code) {
-                    case 'auth/popup-closed-by-user':
-                        errorMessage = 'Login cancelado por el usuario';
+                    case 'auth/operation-not-allowed':
+                        errorMessage = 'Login con Google no está habilitado';
                         break;
-                    case 'auth/popup-blocked':
-                        errorMessage = 'Popup bloqueado. Intentando método alternativo...';
-                        // Intentar redirect
-                        try {
-                            await signInWithRedirect(auth, provider);
-                            return; // No mostrar error si redirect funciona
-                        } catch (redirectError) {
-                            errorMessage = 'Error al redirigir para autenticación';
-                        }
+                    case 'auth/unauthorized-domain':
+                        errorMessage = 'Dominio no autorizado para Google Auth';
                         break;
-                    case 'auth/cancelled-popup-request':
-                        errorMessage = 'Solicitud de popup cancelada';
+                    case 'auth/network-request-failed':
+                        errorMessage = 'Error de conexión. Verifica tu internet';
                         break;
                     default:
                         errorMessage = `Error: ${error.message}`;
