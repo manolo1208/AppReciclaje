@@ -336,12 +336,12 @@
         import { getFirestore, collection, doc, getDoc, getDocs, setDoc, updateDoc, addDoc, query, where, orderBy, serverTimestamp } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js';
         import { getStorage, ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js';
 
-        // Configuración corregida de Firebase
+        // Configuración corregida de Firebase (usando los datos que proporcionaste)
         const firebaseConfig = {
             apiKey: "AIzaSyA2t_5x6x4fi0t4efDjk9OG0Gh1g95U6c0",
             authDomain: "appreciclaje-nuevo.firebaseapp.com",
             projectId: "appreciclaje-nuevo",
-            storageBucket: "appreciclaje-nuevo.appspot.com",
+            storageBucket: "appreciclaje-nuevo.firebasestorage.app",
             messagingSenderId: "1004737179039",
             appId: "1:1004737179039:web:523003623daaced71c61aa"
         };
@@ -364,14 +364,24 @@
         const authScreen = document.getElementById('auth-screen');
         const appContainer = document.getElementById('app-container');
 
-        // Inicialización
+        // Inicialización mejorada
         document.addEventListener('DOMContentLoaded', async () => {
+            console.log('DOM cargado, iniciando aplicación...');
+            
             setTimeout(() => {
                 loadingScreen.classList.add('hidden');
                 authScreen.classList.remove('hidden');
+                console.log('Pantalla de autenticación mostrada');
             }, 2000);
 
-            loadGoogleMapsAPI();
+            // Cargar Google Maps con manejo de errores
+            try {
+                await loadGoogleMapsAPI();
+                console.log('Google Maps API cargada exitosamente');
+            } catch (error) {
+                console.error('Error cargando Google Maps:', error);
+                showNotification('Error cargando mapas - funcionalidad limitada', 'warning');
+            }
         });
 
         // Cargar Google Maps API
@@ -391,33 +401,61 @@
             });
         }
 
-        // Escucha de autenticación
+        // Escucha de autenticación mejorada
         onAuthStateChanged(auth, async (user) => {
+            console.log('Estado de autenticación cambió:', user ? 'Usuario logueado' : 'No hay usuario');
+            
             if (user) {
                 currentUser = user;
-                await loadUserData();
-                showMainApp();
+                console.log('Usuario actual:', user.uid);
+                
+                try {
+                    await loadUserData();
+                    showMainApp();
+                } catch (error) {
+                    console.error('Error al cargar datos del usuario:', error);
+                    showNotification('Error al cargar datos del usuario', 'error');
+                    // Si hay error cargando datos, volver a auth
+                    await signOut(auth);
+                }
             } else {
+                currentUser = null;
+                userRole = null;
                 showAuthScreen();
             }
         });
 
-        // Cargar datos del usuario
+        // Cargar datos del usuario mejorado
         async function loadUserData() {
             try {
+                console.log('Cargando datos para usuario:', currentUser.uid);
                 const userDoc = await getDoc(doc(db, 'usuarios', currentUser.uid));
+                
                 if (userDoc.exists()) {
                     const userData = userDoc.data();
                     userRole = userData.rol;
-                    document.getElementById('user-name').textContent = userData.nombre;
+                    console.log('Rol del usuario:', userRole);
+                    document.getElementById('user-name').textContent = userData.nombre || 'Usuario';
                 } else {
-                    // Si no existe el documento, redirigir a auth
-                    await signOut(auth);
-                    return;
+                    console.log('Documento de usuario no encontrado, creando...');
+                    // Si no existe el documento, crear uno básico
+                    const basicUserData = {
+                        nombre: currentUser.displayName || currentUser.email?.split('@')[0] || 'Usuario',
+                        email: currentUser.email,
+                        rol: 'usuario',
+                        organizacion: '',
+                        fechaRegistro: serverTimestamp(),
+                        activo: true
+                    };
+                    
+                    await setDoc(doc(db, 'usuarios', currentUser.uid), basicUserData);
+                    userRole = 'usuario';
+                    document.getElementById('user-name').textContent = basicUserData.nombre;
+                    console.log('Usuario creado con rol por defecto:', userRole);
                 }
             } catch (error) {
                 console.error('Error al cargar datos del usuario:', error);
-                showNotification('Error al cargar datos del usuario', 'error');
+                throw error; // Re-lanzar el error para que sea manejado por el caller
             }
         }
 
@@ -430,24 +468,35 @@
         }
 
         function showMainApp() {
+            console.log('Mostrando aplicación principal para rol:', userRole);
+            
             authScreen.classList.add('hidden');
             appContainer.classList.remove('hidden');
             
+            // Ocultar ambos módulos primero
+            document.getElementById('usuario-module').classList.add('hidden');
+            document.getElementById('reciclador-module').classList.add('hidden');
+            
             if (userRole === 'usuario') {
+                console.log('Mostrando módulo de usuario');
                 document.getElementById('usuario-module').classList.remove('hidden');
-                document.getElementById('reciclador-module').classList.add('hidden');
-                loadSolicitudesActivas();
+                showScreen('usuario-home');
+                setTimeout(() => loadSolicitudesActivas(), 500);
             } else if (userRole === 'reciclador') {
+                console.log('Mostrando módulo de reciclador');
                 document.getElementById('reciclador-module').classList.remove('hidden');
-                document.getElementById('usuario-module').classList.add('hidden');
-                loadSolicitudesDisponibles();
+                showScreen('reciclador-home');
+                setTimeout(() => loadSolicitudesDisponibles(), 500);
+            } else {
+                console.error('Rol desconocido:', userRole);
+                showNotification('Rol de usuario no reconocido', 'error');
             }
         }
 
         // ====================== AUTENTICACIÓN ======================
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const email = document.getElementById('email-login').value;
+            const email = document.getElementById('email-login').value.trim();
             const password = document.getElementById('password-login').value;
             
             if (!email || !password) {
@@ -455,19 +504,36 @@
                 return;
             }
 
+            console.log('Intentando login con email:', email);
+            
             try {
-                await signInWithEmailAndPassword(auth, email, password);
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                console.log('Login exitoso:', userCredential.user.uid);
                 showNotification('¡Inicio de sesión exitoso!', 'success');
             } catch (error) {
                 console.error('Error de login:', error);
                 let errorMessage = 'Error al iniciar sesión';
-                if (error.code === 'auth/user-not-found') {
-                    errorMessage = 'Usuario no encontrado';
-                } else if (error.code === 'auth/wrong-password') {
-                    errorMessage = 'Contraseña incorrecta';
-                } else if (error.code === 'auth/invalid-email') {
-                    errorMessage = 'Email inválido';
+                
+                switch (error.code) {
+                    case 'auth/user-not-found':
+                        errorMessage = 'Usuario no encontrado';
+                        break;
+                    case 'auth/wrong-password':
+                        errorMessage = 'Contraseña incorrecta';
+                        break;
+                    case 'auth/invalid-email':
+                        errorMessage = 'Email inválido';
+                        break;
+                    case 'auth/too-many-requests':
+                        errorMessage = 'Demasiados intentos fallidos. Intenta más tarde';
+                        break;
+                    case 'auth/invalid-credential':
+                        errorMessage = 'Credenciales inválidas';
+                        break;
+                    default:
+                        errorMessage = `Error: ${error.message}`;
                 }
+                
                 showNotification(errorMessage, 'error');
             }
         });
@@ -495,18 +561,26 @@
                 return;
             }
 
+            console.log('Intentando registro para:', email, 'con rol:', rol);
+
             try {
                 const userCredential = await createUserWithEmailAndPassword(auth, email, password);
                 const user = userCredential.user;
                 
-                await setDoc(doc(db, 'usuarios', user.uid), {
+                console.log('Usuario creado exitosamente:', user.uid);
+                
+                // Crear documento del usuario
+                const userData = {
                     nombre: nombre,
                     email: email,
                     rol: rol,
                     organizacion: organizacion || '',
                     fechaRegistro: serverTimestamp(),
                     activo: true
-                });
+                };
+                
+                await setDoc(doc(db, 'usuarios', user.uid), userData);
+                console.log('Documento de usuario creado en Firestore');
                 
                 showNotification('¡Registro exitoso!', 'success');
                 
@@ -514,47 +588,77 @@
                 document.getElementById('signup-form').reset();
                 document.getElementById('organizacion-field').classList.add('hidden');
                 
-                // Volver al login
-                document.getElementById('register-form').classList.add('hidden');
-                document.querySelector('#auth-screen > div > div:first-child').classList.remove('hidden');
+                // Volver al login automáticamente
+                setTimeout(() => {
+                    document.getElementById('register-form').classList.add('hidden');
+                    document.querySelector('#auth-screen > div > div:nth-child(2)').classList.remove('hidden');
+                }, 1500);
                 
             } catch (error) {
                 console.error('Error de registro:', error);
                 let errorMessage = 'Error al registrar usuario';
-                if (error.code === 'auth/email-already-in-use') {
-                    errorMessage = 'Este email ya está registrado';
-                } else if (error.code === 'auth/weak-password') {
-                    errorMessage = 'La contraseña es muy débil';
-                } else if (error.code === 'auth/invalid-email') {
-                    errorMessage = 'Email inválido';
+                
+                switch (error.code) {
+                    case 'auth/email-already-in-use':
+                        errorMessage = 'Este email ya está registrado';
+                        break;
+                    case 'auth/weak-password':
+                        errorMessage = 'La contraseña es muy débil';
+                        break;
+                    case 'auth/invalid-email':
+                        errorMessage = 'Email inválido';
+                        break;
+                    default:
+                        errorMessage = `Error: ${error.message}`;
                 }
+                
                 showNotification(errorMessage, 'error');
             }
         });
 
         document.getElementById('login-google').addEventListener('click', async () => {
             const provider = new GoogleAuthProvider();
+            // Configuraciones adicionales para evitar problemas de popup
+            provider.setCustomParameters({
+                prompt: 'select_account'
+            });
+            
             try {
+                console.log('Iniciando login con Google...');
                 const result = await signInWithPopup(auth, provider);
                 const user = result.user;
+                console.log('Login con Google exitoso:', user.uid);
                 
                 // Verificar si el usuario ya existe
                 const userDoc = await getDoc(doc(db, 'usuarios', user.uid));
                 if (!userDoc.exists()) {
+                    console.log('Usuario nuevo con Google, creando perfil...');
                     // Crear usuario nuevo con Google
-                    await setDoc(doc(db, 'usuarios', user.uid), {
+                    const newUserData = {
                         nombre: user.displayName || 'Usuario Google',
                         email: user.email,
                         rol: 'usuario',
                         organizacion: '',
                         fechaRegistro: serverTimestamp(),
                         activo: true
-                    });
+                    };
+                    
+                    await setDoc(doc(db, 'usuarios', user.uid), newUserData);
+                    console.log('Perfil de usuario creado exitosamente');
+                } else {
+                    console.log('Usuario existente con Google');
                 }
+                
                 showNotification('¡Bienvenido!', 'success');
             } catch (error) {
                 console.error('Error con Google:', error);
-                showNotification('Error al iniciar sesión con Google', 'error');
+                let errorMessage = 'Error al iniciar sesión con Google';
+                if (error.code === 'auth/popup-closed-by-user') {
+                    errorMessage = 'Login cancelado por el usuario';
+                } else if (error.code === 'auth/popup-blocked') {
+                    errorMessage = 'Popup bloqueado por el navegador';
+                }
+                showNotification(errorMessage, 'error');
             }
         });
 
